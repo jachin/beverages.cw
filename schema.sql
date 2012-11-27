@@ -1,6 +1,16 @@
-drop table if exists beverage_transaction ;
-create table beverage_transaction (
-	  beverage_transaction_id int primary key auto_increment,
-	  barcode text not null,
-	  transaction_date datetime not null
-);
+DROP TABLE IF EXISTS consumable;
+DROP TABLE IF EXISTS consumed;
+
+CREATE TABLE consumable (
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	upc TEXT NOT NULL,
+	name TEXT NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE consumed (
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	atWhen DATETIME NOT NULL,
+	consumable_id INT NOT NULL,
+	FOREIGN KEY (consumable_id) REFERENCES consumable(id)  
+) ENGINE=InnoDB;
+
