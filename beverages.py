@@ -1,46 +1,39 @@
-from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash
-import sqlite3
-from contextlib import closing
 import urllib2
 import simplejson
 from pprint import pprint
-import sqlalchemy
-from sqlalchemy import *
 
-import settings
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+
+from flask import Flask, request, session, url_for, render_template, flash
+
+from contextlib import closing
 
 # create our little application :)
 app = Flask(__name__)
-app.config.from_object(settings.DevelopmentConfig)
-#app.config.from_envvar('FLASKR_SETTINGS', silent=True)
+#app.config.from_object(settings.DevelopmentConfig)
+app.config.from_pyfile('../etc/beverages.cfg', silent=False)
 
+engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], convert_unicode=True)
 
-def connect_db():
-    return sqlite3.connect(app.config['DATABASE'])
-
+db_session = scoped_session(
+    sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=engine
+    )
+)
+Base = declarative_base()
+Base.query = db_session.query_property()
 
 def init_db():
-    with closing(connect_db()) as db:
-        with app.open_resource('schema.sql') as f:
-            db.cursor().executescript(f.read())
-        db.commit()
-
-
-def query_db(query, args=(), one=False):
-    cur = g.db.execute(query, args)
-    rv = [dict((cur.description[idx][0], value)
-        for idx, value in enumerate(row)) for row in cur.fetchall()]
-    return (rv[0] if rv else None) if one else rv
-
-
-@app.before_request
-def before_request():
-    g.db = connect_db()
-
+    import models
+    Base.metadata.create_all(bind=engine)
 
 @app.teardown_request
-def teardown_request(exception):
-    g.db.close()
+def shutdown_session(exception=None):
+    db_session.remove()
 
 
 @app.route('/')
