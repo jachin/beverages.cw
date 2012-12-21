@@ -10,12 +10,14 @@ from flask import Flask, request, session, url_for, render_template, flash
 
 from contextlib import closing
 
-# create our little application :)
+
 app = Flask(__name__)
-#app.config.from_object(settings.DevelopmentConfig)
 app.config.from_pyfile('../beverages.cfg', silent=False)
 
-engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], convert_unicode=True)
+engine = create_engine(
+    app.config['SQLALCHEMY_DATABASE_URI']
+    , convert_unicode=True
+)
 
 db_session = scoped_session(
     sessionmaker(
@@ -75,5 +77,5 @@ def hi( ):
 #    return render_template('hi.html', message='message text')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0')
 
