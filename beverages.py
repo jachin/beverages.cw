@@ -1,41 +1,46 @@
 import urllib2
 import simplejson
 from pprint import pprint
+from datetime import datetime
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+from pyquery import PyQuery
 
 from flask import Flask, request, session, url_for, render_template, flash
+from flask.ext.sqlalchemy import SQLAlchemy
 
 from contextlib import closing
 
-
 app = Flask(__name__)
 app.config.from_pyfile('../beverages.cfg', silent=False)
+db = SQLAlchemy(app)
 
-engine = create_engine(
-    app.config['SQLALCHEMY_DATABASE_URI']
-    , convert_unicode=True
-)
+class Consumable(db.Model):
+    __tablename__ = 'consumable'
+    id = db.Column(db.Integer, primary_key=True)
+    upc = db.Column(db.String(50), unique=True)
+    name = db.Column(db.String(120), unique=True)
 
-db_session = scoped_session(
-    sessionmaker(
-        autocommit=False,
-        autoflush=False,
-        bind=engine
+    def __init__(self, upc, name):
+        self.upc = upc
+        self.name= name
+
+    def __repr__(self):
+        return '<Consumable %r>' % (self.name)
+
+
+class Consumed(db.Model):
+    __tablename__ = 'consumed'
+    id = db.Column(db.Integer, primary_key=True)
+    datetime = db.Column(db.DateTime())
+    consumable = db.Column(
+        'consumable_id'
+        , db.Integer
+        , db.ForeignKey("consumable.id")
+        , nullable=False
     )
-)
-Base = declarative_base()
-Base.query = db_session.query_property()
 
-def init_db():
-    import models
-    Base.metadata.create_all(bind=engine)
-
-@app.teardown_request
-def shutdown_session(exception=None):
-    db_session.remove()
+    def __repr__(self):
+        return '<Consumed %r>' % (self.id)
 
 
 @app.route('/')
@@ -51,12 +56,41 @@ def update_database():
     scans = simplejson.load(f)
     
     for scan in scans:
-        if is_new_consumable(scan['upc']):
-            add_new_consumable(scan['upc'])
-        if is_new_consumed(scan['id']):
-            add_new_consumed(scan['id'],scan['timestamp'],scan['upc'])
+        if Consumable.query.filter_by(upc = scan['upc']).count() == 0:
+            consumable = Consumable(scan['upc'], look_up_upc(scan['upc']))
+            db.session.add(consumable)
+            db.session.commit()
+        consumable = Consumable.query.filter_by(upc = scan['upc']).first()
+        pprint(consumable)
+        if Consumed.query.filter_by(id = scan['id']).count() == 0:
+            pprint(scan['timestamp'])
+            timestamp = datetime.strptime(
+                scan['timestamp']
+                , '%Y-%m-%dT%H:%M:%S'
+            )
+            consumed = Consumed(
+                id=scan['id']
+                , datetime=timestamp
+                , consumable=consumable.id
+            )
+            db.session.add(consumed)
+            db.session.commit()
 
     return 'Database updated.'
+
+def look_up_upc(upc):
+    url = 'http://www.upcdatabase.com/item/'+upc
+    req = urllib2.Request(url)
+    response = urllib2.urlopen(req)
+    page = PyQuery(response.read())
+
+    for label_row in page.find('table.data tr td:first-child'):
+        label_row = PyQuery(label_row)
+        if label_row.text() == "Description":
+            description_cell = label_row.siblings()[-1]
+            return description_cell.text
+
+
 
 def hi( ):
     #results = engine.execute('INSERT INTO beverage_transaction (barcode, transaction_date) VALUES(SHA1(NOW()), NOW() );');
