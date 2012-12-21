@@ -3,7 +3,7 @@ import simplejson
 from pprint import pprint
 from datetime import datetime
 
-from pyquery import PyQuery
+from factual import Factual
 
 from flask import Flask, request, session, url_for, render_template, flash
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -18,7 +18,7 @@ class Consumable(db.Model):
     __tablename__ = 'consumable'
     id = db.Column(db.Integer, primary_key=True)
     upc = db.Column(db.String(50), unique=True)
-    name = db.Column(db.String(120), unique=True)
+    name = db.Column(db.String(120), unique=False)
 
     def __init__(self, upc, name):
         self.upc = upc
@@ -79,16 +79,16 @@ def update_database():
     return 'Database updated.'
 
 def look_up_upc(upc):
-    url = 'http://www.upcdatabase.com/item/'+upc
-    req = urllib2.Request(url)
-    response = urllib2.urlopen(req)
-    page = PyQuery(response.read())
+    factual = Factual(
+        '1psULPx7BQfmamX3bnkOnR7NWkcPRKcjnSvazvXF'
+        , 'Eu8sIGOyXIPrq3jHAudGjkPea4v5v813jJcxOOTW'
+    )
 
-    for label_row in page.find('table.data tr td:first-child'):
-        label_row = PyQuery(label_row)
-        if label_row.text() == "Description":
-            description_cell = label_row.siblings()[-1]
-            return description_cell.text
+    q = factual.table('products-cpg').filters({"upc":upc})
+    if q.data():
+        result = q.data()[0]
+        return "{brand} {product_name}". format(**result)
+    return None
 
 
 
