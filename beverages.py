@@ -70,6 +70,7 @@ def update_database():
             stats['number_of_new_consumables'] += 1
         consumable = Consumable.query.filter_by(upc = scan['upc']).first()
         pprint(consumable)
+        pprint(stats)
         if Consumed.query.filter_by(id = scan['id']).count() == 0:
             pprint(scan['timestamp'])
             timestamp = datetime.strptime(
