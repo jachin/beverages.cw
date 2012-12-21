@@ -63,6 +63,23 @@ def update_database():
 
     return 'Database updated.'
 
+def hi( ):
+    #results = engine.execute('INSERT INTO beverage_transaction (barcode, transaction_date) VALUES(SHA1(NOW()), NOW() );');
+    results = engine.execute('SELECT COUNT(consumed.id) AS amount, consumable.upc, consumable.name FROM consumed, consumable WHERE consumable.id=consumed.consumable_id GROUP BY name;');
+    out = '<html><head><script type="text/javascript" src="../src/plugins/jqplot.pieRenderer.min.js"></script><script type="text/javascript" src="../src/plugins/jqplot.donutRenderer.min.js"></script></head><body><table>'
+    for row in results:
+        url = 'http://www.upcdatabase.com/item/'+row['upc']
+        req = urllib2.Request(url)
+        response = urllib2.urlopen(req)
+        the_page = response.read()
+        the_page = the_page[the_page.index('<td>Description'):];
+        out += '<tr><td>Count:</td><td>'+str(row['amount'])+'</td>'+the_page[:the_page.index('</tr>')]+'</tr>';
+    
+    results.close()
+    out += "</table></body></html>"
+#    return the_page[:the_page.index('</tr>')];
+    return Markup(out)
+#    return render_template('hi.html', message='message text')
 
 if __name__ == '__main__':
     app.run(debug=True)
