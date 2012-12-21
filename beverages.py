@@ -13,7 +13,7 @@ from contextlib import closing
 # create our little application :)
 app = Flask(__name__)
 #app.config.from_object(settings.DevelopmentConfig)
-app.config.from_pyfile('../etc/beverages.cfg', silent=False)
+app.config.from_pyfile('../beverages.cfg', silent=False)
 
 engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], convert_unicode=True)
 
