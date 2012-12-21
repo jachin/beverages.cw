@@ -55,11 +55,19 @@ def update_database():
     f = opener.open(req)
     scans = simplejson.load(f)
     
+    stats = {
+        'number_of_scans': 0,
+        'number_of_new_consumables': 0,
+        'number_of_new_consumed': 0,
+    }
+
     for scan in scans:
+        stats['number_of_scans'] += 1
         if Consumable.query.filter_by(upc = scan['upc']).count() == 0:
             consumable = Consumable(scan['upc'], look_up_upc(scan['upc']))
             db.session.add(consumable)
             db.session.commit()
+            stats['number_of_new_consumables'] += 1
         consumable = Consumable.query.filter_by(upc = scan['upc']).first()
         pprint(consumable)
         if Consumed.query.filter_by(id = scan['id']).count() == 0:
@@ -75,7 +83,9 @@ def update_database():
             )
             db.session.add(consumed)
             db.session.commit()
+            stats['number_of_new_consumed'] += 1
 
+    pprint(stats)
     return 'Database updated.'
 
 def look_up_upc(upc):
