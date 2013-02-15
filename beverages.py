@@ -9,13 +9,15 @@ from flask import Flask, request, session, url_for, render_template, flash
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import or_, and_, desc
 from sqlalchemy.ext.serializer import loads, dumps
+from flask.ext.admin import Admin, BaseView, expose
+from flask.ext.admin.contrib.sqlamodel import ModelView
+
 
 from contextlib import closing
 
 app = Flask(__name__)
 app.config.from_pyfile('../beverages.cfg', silent=False)
 db = SQLAlchemy(app)
-
 
 class Consumable(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -28,6 +30,7 @@ class Consumable(db.Model):
 
     def __repr__(self):
         return '<Consumable %r>' % (self.name)
+        
 
 
 class Consumed(db.Model):
@@ -113,7 +116,23 @@ def update_database():
 #     return simplejson.dumps( query2 )
 
 
-def look_up_upc(upc):
+def look_up_upc(upc, force_external_lookup=False):
+    # use database
+    consumeable = Consumable.query.filter_by(upc=upc).first()
+    if (consumeable != None):
+        return consumeable.name
+
+    # use eandata.com
+    api_key = 'E37966CA511E8E1C'
+    url = 'http://eandata.com/feed.php'
+    mode = 'json'
+    method = 'find'
+    result = urllib2.urlopen(url + '?keycode=' + api_key + '&mode=' + mode + '&' + method + '=' + upc).read()
+    result = simplejson.loads(str(result))
+    if (result['product']['product']):
+        return result['product']['product']
+        
+    # use factual
     factual = Factual(
         '1psULPx7BQfmamX3bnkOnR7NWkcPRKcjnSvazvXF'
         , 'Eu8sIGOyXIPrq3jHAudGjkPea4v5v813jJcxOOTW'
@@ -123,9 +142,42 @@ def look_up_upc(upc):
     if q.data():
         result = q.data()[0]
         return "{brand} {product_name}". format(**result)
+
     return None
 
+@app.route('/lookup/<upc>')
+def look_up_test(upc):
+    return look_up_upc(upc)
 
+@app.route('/lookup-and-save/<upc>')
+def lookup_and_save(upc):
+
+    name = look_up_upc(upc, True)
+    consumable = Consumable.query.filter_by(upc=upc).first()
+    
+    if (consumable == None):
+        consumable = Consumable(upc, name)
+        db.session.add(consumable)
+    
+    else:
+        consumable.name = name
+    
+    db.session.commit()
+    
+    consumable = Consumable.query.filter_by(upc=upc).first()
+    return str(consumable)
+
+<<<<<<< HEAD
+=======
+# @app.teardown_request
+# def shutdown_session(exception=None):
+#     db_session.remove()
+
+admin = Admin(app, name='Beverage-O-Meter Admin')
+admin.add_view(ModelView(Consumable, db.session))
+admin.add_view(ModelView(Consumed, db.session))
+
+>>>>>>> de3f96d2a90a857ee948ea905172853125fbf0b8
 if __name__ == '__main__':
     app.debug = True
     app.run(host='0.0.0.0')
