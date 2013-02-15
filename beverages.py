@@ -61,6 +61,7 @@ class Consumed(db.Model):
             'id': self.id,
             'scann_id': self.scann_id,
             'datetime': self.datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            'type_id': self.details.id,
             'upc': self.details.upc,
             'name': self.details.name,
         }
@@ -72,6 +73,11 @@ class Consumed(db.Model):
 @app.route('/')
 def show_stats():
     return 'Beverage-o-meter'
+
+
+@app.route('/demo/')
+def demo():
+    return render_template('demo.html')
 
 
 @app.route('/update_db/')
