@@ -87,6 +87,18 @@ def update_database():
     return 'Database updated.'
 
 def look_up_upc(upc):
+
+    # use eandata.com
+    api_key = 'E37966CA511E8E1C'
+    url = 'http://eandata.com/feed.php'
+    mode = 'json'
+    method = 'find'
+    result = urllib2.urlopen(url + '?keycode=' + api_key + '&mode=' + mode + '&' + method + '=' + upc).read()
+    result = simplejson.loads(str(result))
+    if (result['product']['product']):
+        return result['product']['product']
+        
+    # use factual
     factual = Factual(
         '1psULPx7BQfmamX3bnkOnR7NWkcPRKcjnSvazvXF'
         , 'Eu8sIGOyXIPrq3jHAudGjkPea4v5v813jJcxOOTW'
