@@ -69,9 +69,6 @@ def update_database():
             db.session.commit()
             stats['number_of_new_consumables'] += 1
         consumable = Consumable.query.filter_by(upc = scan['upc']).first()
-        #pprint(consumable)
-        pprint(stats)
-        pprint(scan)
         if Consumed.query.filter_by(scann_id = scan['id']).count() == 0:
             pprint(scan['timestamp'])
             timestamp = datetime.strptime(
@@ -87,7 +84,6 @@ def update_database():
             db.session.commit()
             stats['number_of_new_consumed'] += 1
 
-    pprint(stats)
     return 'Database updated.'
 
 def look_up_upc(upc):
