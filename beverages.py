@@ -5,7 +5,7 @@ from datetime import datetime
 
 from factual import Factual
 
-from flask import Flask, request, session, url_for, render_template, flash
+from flask import Flask, request, session, url_for, render_template, flash, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import or_, and_, desc
 from sqlalchemy.ext.serializer import loads, dumps
@@ -136,7 +136,7 @@ def show_consumables():
     json_data = []
     for consumeable in Consumable.query.all():
         json_data.append(consumeable.serialize())
-    return simplejson.dumps( json_data )
+    return jsonify( drinks=json_data )
 
 
 @app.route('/drink/<int:consumable_id>')
