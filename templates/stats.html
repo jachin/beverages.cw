@@ -308,10 +308,8 @@
 			</thead>
 			<tbody>
 				{% for scan in scans %}
-				{% if consumables[scan.consumable] %}
-				{% if consumables[scan.consumable].name != None %}
-				<tr><td><b>{{ consumables[scan.consumable].name }}</b></td><td>{{ consumables[scan.consumable].upc }}</td><td>{{ scan.datetime }}</td></tr>
-				{% endif %}
+				{% if scan.name != None %}
+				<tr><td><b>{{ scan.name }}</b></td><td>{{ scan.upc }}</td><td>{{ scan.datetime }}</td></tr>
 				{% endif %}
 				{% endfor %}			
 			</tbody>
