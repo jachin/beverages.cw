@@ -8,6 +8,7 @@ from factual import Factual
 from flask import Flask, request, session, url_for, render_template, flash
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import or_, and_, desc
+from sqlalchemy.ext.serializer import loads, dumps
 
 from contextlib import closing
 
@@ -54,7 +55,9 @@ def update_database():
 
     last_consumed = Consumed.query.order_by(desc(Consumed.scann_id)).first()
 
-    req = urllib2.Request("http://192.168.22.193/after/{0}".format(last_consumed.scann_id))
+    req = urllib2.Request(
+        "http://192.168.22.193/after/{0}".format(last_consumed.scann_id)
+    )
     opener = urllib2.build_opener()
     f = opener.open(req)
     scans = simplejson.load(f)
@@ -88,6 +91,26 @@ def update_database():
             stats['number_of_new_consumed'] += 1
 
     return render_template('update_database.html', **stats)
+
+
+# @app.route('/all/')
+# def show_all():
+#     #return simplejson.dumps( Consumed.query.all() )
+#     data = []
+
+#     # pickle the query
+#     serialized = dumps(Consumed.query.all())
+    
+#     query2 = loads(serialized)
+#     # for consumed in Consumed.query.all():
+#     #     pprint(dict(consumed))
+
+#     pprint(query2)
+
+#     for c in query2:
+#         pprint(dict(c))
+
+#     return simplejson.dumps( query2 )
 
 
 def look_up_upc(upc):
