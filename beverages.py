@@ -33,6 +33,13 @@ class Consumable(db.Model):
         self.upc = upc
         self.name= name
 
+    def serialize(self):
+        return {
+            'id': self.id,
+            'upc': self.upc,
+            'name': self.name,
+        }
+
     def __repr__(self):
         return '<Consumable %r>' % (self.name)
         
@@ -112,19 +119,26 @@ def update_database():
 
 @app.route('/all/')
 def show_all():
-    #return simplejson.dumps( Consumed.query.all() )
     json_data = []
     for consumed in Consumed.query.all():
-        #pprint(consumed)
         json_data.append(consumed.serialize())
 
-    #pprint(json_data)
+    return simplejson.dumps( json_data )
 
-    # for consumed in Consumed.query.join(Consumable).all():
-    #     pprint(consumed)
-    #     pprint(consumed.item)
-        
+@app.route('/drinks/')
+def show_consumables():
+    json_data = []
+    for consumeable in Consumable.query.all():
+        json_data.append(consumeable.serialize())
+    return simplejson.dumps( json_data )
 
+
+@app.route('/drink/<int:consumable_id>')
+def show_one_consumable(consumable_id):
+    json_data = []
+    query = Consumed.query.filter_by(consumable = consumable_id)
+    for consumed in query.all():
+        json_data.append(consumed.serialize())
     return simplejson.dumps( json_data )
 
 
