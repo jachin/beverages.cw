@@ -167,17 +167,10 @@ def lookup_and_save(upc):
     consumable = Consumable.query.filter_by(upc=upc).first()
     return str(consumable)
 
-<<<<<<< HEAD
-=======
-# @app.teardown_request
-# def shutdown_session(exception=None):
-#     db_session.remove()
-
 admin = Admin(app, name='Beverage-O-Meter Admin')
 admin.add_view(ModelView(Consumable, db.session))
 admin.add_view(ModelView(Consumed, db.session))
 
->>>>>>> de3f96d2a90a857ee948ea905172853125fbf0b8
 if __name__ == '__main__':
     app.debug = True
     app.run(host='0.0.0.0')
