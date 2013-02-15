@@ -42,7 +42,13 @@ class Consumable(db.Model):
 
     def __repr__(self):
         return '<Consumable %r>' % (self.name)
-        
+    
+    def serialize(self):
+        return {
+            'id': self.id,
+            'upc': self.upc,
+            'name': self.name,
+        }
 
 
 class Consumed(db.Model):
@@ -72,7 +78,65 @@ class Consumed(db.Model):
 
 @app.route('/')
 def show_stats():
-    return 'Beverage-o-meter'
+    scans = []
+    for consumed in Consumed.query.all():
+        #pprint(consumed)
+        scans.append(consumed.serialize())
+    data = {
+        'scans': scans
+    }
+    return render_template('stats.html', **data)
+
+@app.route('/days/<day_string>')
+def days(day_string):
+    days = {}
+    for consumed in Consumed.query.all():
+
+        if day_string in ['group-by-day']:
+            date_string = consumed.datetime.strftime("%a")
+        else:
+            date_string = consumed.datetime.strftime("%Y-%m-%d")
+
+        if date_string not in days.keys():
+            days[date_string] = []
+            
+        days[date_string].append(consumed.serialize())
+
+    data = {
+        'days': days
+    }
+
+    return simplejson.dumps( days )
+    
+@app.route('/graph')
+def graph():
+
+    hours = {}
+    drinks = {}
+    
+    for consumable in Consumable.query.all():
+        consumable = consumable.serialize()
+        drinks[consumable['upc']] = {'id': consumable['id'], 'name': consumable['name']}
+
+    for consumed in Consumed.query.all():
+
+        hour = consumed.datetime.strftime("%H")
+        consumed = consumed.serialize()
+
+        if hour not in hours.keys():
+            hours[hour] = {}
+            
+        if consumed['upc'] not in hours[hour].keys():
+            hours[hour][consumed['upc']] = 0
+
+        hours[hour][consumed['upc']] += 1
+
+    data = {
+        'drinks': simplejson.dumps(drinks),
+        'hours': simplejson.dumps(hours)
+    }
+
+    return render_template('graph.html', **data)
 
 
 @app.route('/demo/')
