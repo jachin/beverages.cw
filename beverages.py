@@ -23,6 +23,11 @@ class Consumable(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     upc = db.Column(db.String(50), unique=True)
     name = db.Column(db.String(120), unique=False)
+    consumed = db.relationship(
+        'Consumed',
+        backref='details',
+        lazy='dynamic'
+    )
 
     def __init__(self, upc, name):
         self.upc = upc
@@ -43,6 +48,15 @@ class Consumed(db.Model):
         , db.ForeignKey("consumable.id")
         , nullable=False
     )
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'scann_id': self.scann_id,
+            'datetime': self.datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            'upc': self.details.upc,
+            'name': self.details.name,
+        }
 
     def __repr__(self):
         return '<Consumed %r>' % (self.id)
@@ -96,24 +110,22 @@ def update_database():
     return render_template('update_database.html', **stats)
 
 
-# @app.route('/all/')
-# def show_all():
-#     #return simplejson.dumps( Consumed.query.all() )
-#     data = []
+@app.route('/all/')
+def show_all():
+    #return simplejson.dumps( Consumed.query.all() )
+    json_data = []
+    for consumed in Consumed.query.all():
+        #pprint(consumed)
+        json_data.append(consumed.serialize())
 
-#     # pickle the query
-#     serialized = dumps(Consumed.query.all())
-    
-#     query2 = loads(serialized)
-#     # for consumed in Consumed.query.all():
-#     #     pprint(dict(consumed))
+    #pprint(json_data)
 
-#     pprint(query2)
+    # for consumed in Consumed.query.join(Consumable).all():
+    #     pprint(consumed)
+    #     pprint(consumed.item)
+        
 
-#     for c in query2:
-#         pprint(dict(c))
-
-#     return simplejson.dumps( query2 )
+    return simplejson.dumps( json_data )
 
 
 def look_up_upc(upc, force_external_lookup=False):
