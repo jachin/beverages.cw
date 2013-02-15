@@ -7,6 +7,7 @@ from factual import Factual
 
 from flask import Flask, request, session, url_for, render_template, flash
 from flask.ext.sqlalchemy import SQLAlchemy
+from sqlalchemy import or_, and_, desc
 
 from contextlib import closing
 
@@ -50,7 +51,10 @@ def show_stats():
 
 @app.route('/update_db/')
 def update_database():
-    req = urllib2.Request("http://192.168.22.193")
+
+    last_consumed = Consumed.query.order_by(desc(Consumed.scann_id)).first()
+
+    req = urllib2.Request("http://192.168.22.193/after/{0}".format(last_consumed.scann_id))
     opener = urllib2.build_opener()
     f = opener.open(req)
     scans = simplejson.load(f)
@@ -70,7 +74,6 @@ def update_database():
             stats['number_of_new_consumables'] += 1
         consumable = Consumable.query.filter_by(upc = scan['upc']).first()
         if Consumed.query.filter_by(scann_id = scan['id']).count() == 0:
-            pprint(scan['timestamp'])
             timestamp = datetime.strptime(
                 scan['timestamp']
                 , '%Y-%m-%dT%H:%M:%S'
@@ -84,7 +87,7 @@ def update_database():
             db.session.commit()
             stats['number_of_new_consumed'] += 1
 
-    return 'Database updated.'
+    return render_template('update_database.html', **stats)
 
 
 def look_up_upc(upc):
