@@ -10,8 +10,38 @@ from flask.ext.sqlalchemy import SQLAlchemy
 
 from contextlib import closing
 
-from models import db, app, Consumable, Consumed
-from database import db_session
+app = Flask(__name__)
+app.config.from_pyfile('../beverages.cfg', silent=False)
+db = SQLAlchemy(app)
+
+
+class Consumable(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    upc = db.Column(db.String(50), unique=True)
+    name = db.Column(db.String(120), unique=False)
+
+    def __init__(self, upc, name):
+        self.upc = upc
+        self.name= name
+
+    def __repr__(self):
+        return '<Consumable %r>' % (self.name)
+
+
+class Consumed(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    scann_id = db.Column(db.Integer, unique=True, index=True)
+    datetime = db.Column(db.DateTime())
+    consumable = db.Column(
+        'consumable_id'
+        , db.Integer
+        , db.ForeignKey("consumable.id")
+        , nullable=False
+    )
+
+    def __repr__(self):
+        return '<Consumed %r>' % (self.id)
+
 
 @app.route('/')
 def show_stats():
@@ -33,29 +63,29 @@ def update_database():
 
     for scan in scans:
         stats['number_of_scans'] += 1
-        # if Consumable.query.filter_by(upc = scan['upc']).count() == 0:
-        #     consumable = Consumable(scan['upc'], look_up_upc(scan['upc']))
-        #     db.session.add(consumable)
-        #     db.session.commit()
-        #     stats['number_of_new_consumables'] += 1
-        # consumable = Consumable.query.filter_by(upc = scan['upc']).first()
+        if Consumable.query.filter_by(upc = scan['upc']).count() == 0:
+            consumable = Consumable(scan['upc'], look_up_upc(scan['upc']))
+            db.session.add(consumable)
+            db.session.commit()
+            stats['number_of_new_consumables'] += 1
+        consumable = Consumable.query.filter_by(upc = scan['upc']).first()
         #pprint(consumable)
         pprint(stats)
         pprint(scan)
-        # if Consumed.query.filter_by(id = scan['id']).count() == 0:
-        #     pprint(scan['timestamp'])
-        #     timestamp = datetime.strptime(
-        #         scan['timestamp']
-        #         , '%Y-%m-%dT%H:%M:%S'
-        #     )
-        #     consumed = Consumed(
-        #         id=scan['id']
-        #         , datetime=timestamp
-        #         , consumable=consumable.id
-        #     )
-        #     db.session.add(consumed)
-        #     db.session.commit()
-        #     stats['number_of_new_consumed'] += 1
+        if Consumed.query.filter_by(scann_id = scan['id']).count() == 0:
+            pprint(scan['timestamp'])
+            timestamp = datetime.strptime(
+                scan['timestamp']
+                , '%Y-%m-%dT%H:%M:%S'
+            )
+            consumed = Consumed(
+                scann_id=scan['id']
+                , datetime=timestamp
+                , consumable=consumable.id
+            )
+            db.session.add(consumed)
+            db.session.commit()
+            stats['number_of_new_consumed'] += 1
 
     pprint(stats)
     return 'Database updated.'
@@ -73,9 +103,9 @@ def look_up_upc(upc):
     return None
 
 
-@app.teardown_request
-def shutdown_session(exception=None):
-    db_session.remove()
+# @app.teardown_request
+# def shutdown_session(exception=None):
+#     db_session.remove()
 
 
 if __name__ == '__main__':
