@@ -145,6 +145,7 @@ def lookup_and_save(upc):
 
 admin = Admin(app, name='Beverage-O-Meter Admin')
 admin.add_view(ModelView(Consumable, db.session))
+admin.add_view(ModelView(Consumed, db.session))
 
 if __name__ == '__main__':
     app.debug = True
