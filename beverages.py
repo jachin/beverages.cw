@@ -86,6 +86,7 @@ def update_database():
 
     return 'Database updated.'
 
+
 def look_up_upc(upc):
     factual = Factual(
         '1psULPx7BQfmamX3bnkOnR7NWkcPRKcjnSvazvXF'
@@ -97,11 +98,6 @@ def look_up_upc(upc):
         result = q.data()[0]
         return "{brand} {product_name}". format(**result)
     return None
-
-
-# @app.teardown_request
-# def shutdown_session(exception=None):
-#     db_session.remove()
 
 
 if __name__ == '__main__':
