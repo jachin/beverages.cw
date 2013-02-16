@@ -42,13 +42,6 @@ class Consumable(db.Model):
 
     def __repr__(self):
         return '<Consumable %r>' % (self.name)
-    
-    def serialize(self):
-        return {
-            'id': self.id,
-            'upc': self.upc,
-            'name': self.name,
-        }
 
 
 class Consumed(db.Model):
@@ -198,10 +191,13 @@ def show_all():
 @app.route('/drinks/')
 def show_consumables():
     
-
     drinks = []
     for consumeable in Consumable.query.all():
-        drinks.append(consumeable.serialize())
+        
+        drink_data = consumeable.serialize()
+        total_number = Consumed.query.filter_by(consumable = consumeable.id).count()
+        drink_data['total_number'] = total_number
+        drinks.append(drink_data)
 
     if request.is_xhr:
         return jsonify( drinks=drinks )

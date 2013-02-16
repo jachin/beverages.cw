@@ -17,6 +17,7 @@
 
 			<tr>
 				<th>ID</th>
+				<th>#</th>
 				<th>Name</th>
 				<th>UPC</th>
 			</tr>
@@ -26,8 +27,19 @@
 				<td>
 					{{ drink.id }}
 				</td>
+				<td>
+					{{ drink.total_number }}
+				</td>
 				<td><b>{{ drink.name }}</b></td>
 				<td>{{ drink.upc }}</td>
+
+				<td>
+					<a href="http://eandata.com/lookup/{{ drink.upc }}">eandata.com</a>
+				</td>
+
+				<td>
+					<a href="http://www.upcdatabase.com/item/{{ drink.upc }}">upcdatabase.com</a>
+				</td>
 
 				<td>
 					<a href="http://www.checkupc.com/search.php?keyword={{ drink.upc }}">checkupc.com</a>
