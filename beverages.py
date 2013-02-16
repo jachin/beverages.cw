@@ -197,10 +197,17 @@ def show_all():
 
 @app.route('/drinks/')
 def show_consumables():
-    json_data = []
+    
+
+    drinks = []
     for consumeable in Consumable.query.all():
-        json_data.append(consumeable.serialize())
-    return jsonify( drinks=json_data )
+        drinks.append(consumeable.serialize())
+
+    if request.is_xhr:
+        return jsonify( drinks=drinks )
+    else:
+        return render_template('drinks.html', drinks=drinks)
+    
 
 
 @app.route('/drink/<int:consumable_id>')

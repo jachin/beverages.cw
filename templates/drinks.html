@@ -1,0 +1,51 @@
+<html>
+
+	<head>
+		<title>Drinks</title>
+
+		<script type="text/javascript" src="/static/javascript/jquery-1.9.1.min.js"></script>
+
+		<script type="text/javascript" src="/static/javascript/raphael-min.js"></script>
+		<script type="text/javascript" src="/static/javascript/g.raphael-min.js"></script>
+		<script type="text/javascript" src="/static/javascript/g.pie-min.js"></script>
+
+	</head>
+
+	<body>
+
+		<table>
+
+			<tr>
+				<th>ID</th>
+				<th>Name</th>
+				<th>UPC</th>
+			</tr>
+			{% for drink in drinks %}
+			<tr>
+
+				<td>
+					{{ drink.id }}
+				</td>
+				<td><b>{{ drink.name }}</b></td>
+				<td>{{ drink.upc }}</td>
+
+				<td>
+					<a href="http://www.checkupc.com/search.php?keyword={{ drink.upc }}">checkupc.com</a>
+				</td>
+
+				<td>
+					<a href="http://www.itemlookup.net/search.php?type=upc&s={{ drink.upc }}">itemlookup.net</a>
+				</td>
+
+				<td>
+					<a href="http://www.upc-search.org/perl/upc-search.pl?q={{ drink.upc }}">upc-search.org</a>
+				</td>
+
+			</tr>
+
+			{% endfor %}
+		</table>
+
+	</body>
+
+</html>
