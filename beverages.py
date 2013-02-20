@@ -3,6 +3,8 @@ import simplejson
 from pprint import pprint
 from datetime import datetime
 
+import pytz
+
 from factual import Factual
 
 from flask import Flask, request, session, url_for, render_template, flash, jsonify
@@ -18,6 +20,8 @@ from contextlib import closing
 app = Flask(__name__)
 app.config.from_pyfile('../beverages.cfg', silent=False)
 db = SQLAlchemy(app)
+
+central_tz = pytz.timezone('US/Central')
 
 class Consumable(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -56,10 +60,16 @@ class Consumed(db.Model):
     )
 
     def serialize(self):
+
+        scan_datetime = self.datetime.replace(tzinfo=pytz.utc)
+
+        scan_datetime_cst = scan_datetime.astimezone(central_tz)
+
         return {
             'id': self.id,
             'scann_id': self.scann_id,
-            'datetime': self.datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            'datetime': scan_datetime.strftime("%Y-%m-%d %H:%M:%S %Z%z"),
+            'datetime_cst': scan_datetime_cst.strftime("%Y-%m-%d %H:%M:%S %Z%z"),
             'type_id': self.details.id,
             'upc': self.details.upc,
             'name': self.details.name,
@@ -137,14 +147,21 @@ def demo():
     return render_template('demo.html')
 
 
+@app.route('/update_db')
 @app.route('/update_db/')
 def update_database():
 
     last_consumed = Consumed.query.order_by(desc(Consumed.scann_id)).first()
 
-    req = urllib2.Request(
-        "http://192.168.22.193/after/{0}".format(last_consumed.scann_id)
-    )
+    if last_consumed is None:
+        req = urllib2.Request(
+            "http://192.168.22.193/"
+        )
+    else:
+        req = urllib2.Request(
+            "http://192.168.22.193/after/{0}".format(last_consumed.scann_id)
+        )
+
     opener = urllib2.build_opener()
     f = opener.open(req)
     scans = simplejson.load(f)
@@ -164,10 +181,14 @@ def update_database():
             stats['number_of_new_consumables'] += 1
         consumable = Consumable.query.filter_by(upc = scan['upc']).first()
         if Consumed.query.filter_by(scann_id = scan['id']).count() == 0:
+
             timestamp = datetime.strptime(
                 scan['timestamp']
                 , '%Y-%m-%dT%H:%M:%S'
             )
+
+            timestamp = timestamp.replace(tzinfo=pytz.utc)
+
             consumed = Consumed(
                 scann_id=scan['id']
                 , datetime=timestamp
