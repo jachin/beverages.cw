@@ -5,7 +5,7 @@ from datetime import datetime
 
 import pytz
 
-from factual import Factual
+# from factual import Factual
 
 from flask import Flask, request, session, url_for, render_template, flash, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -175,7 +175,7 @@ def update_database():
     for scan in scans:
         stats['number_of_scans'] += 1
         if Consumable.query.filter_by(upc = scan['upc']).count() == 0:
-            consumable = Consumable(scan['upc'], look_up_upc(scan['upc']))
+            consumable = Consumable(scan['upc'])
             db.session.add(consumable)
             db.session.commit()
             stats['number_of_new_consumables'] += 1
@@ -236,56 +236,52 @@ def show_one_consumable(consumable_id):
     return simplejson.dumps( json_data )
 
 
-def look_up_upc(upc, force_external_lookup=False):
-    # use database
-    consumeable = Consumable.query.filter_by(upc=upc).first()
-    if (consumeable != None):
-        return consumeable.name
+# def look_up_upc(upc, force_external_lookup=False):
+#     # use database
+#     consumeable = Consumable.query.filter_by(upc=upc).first()
+#     if (consumeable != None):
+#         return consumeable.name
 
-    # use eandata.com
-    api_key = 'E37966CA511E8E1C'
-    url = 'http://eandata.com/feed.php'
-    mode = 'json'
-    method = 'find'
-    result = urllib2.urlopen(url + '?keycode=' + api_key + '&mode=' + mode + '&' + method + '=' + upc).read()
-    result = simplejson.loads(str(result))
-    if (result['product']['product']):
-        return result['product']['product']
+#     # use eandata.com
+#     api_key = 'E37966CA511E8E1C'
+#     url = 'http://eandata.com/feed.php'
+#     mode = 'json'
+#     method = 'find'
+#     result = urllib2.urlopen(url + '?keycode=' + api_key + '&mode=' + mode + '&' + method + '=' + upc).read()
+#     result = simplejson.loads(str(result))
+#     if (result['product']['product']):
+#         return result['product']['product']
         
-    # use factual
-    factual = Factual(
-        '1psULPx7BQfmamX3bnkOnR7NWkcPRKcjnSvazvXF'
-        , 'Eu8sIGOyXIPrq3jHAudGjkPea4v5v813jJcxOOTW'
-    )
+#     # use factual
+#     factual = Factual(
+#         '1psULPx7BQfmamX3bnkOnR7NWkcPRKcjnSvazvXF'
+#         , 'Eu8sIGOyXIPrq3jHAudGjkPea4v5v813jJcxOOTW'
+#     )
 
-    q = factual.table('products-cpg').filters({"upc":upc})
-    if q.data():
-        result = q.data()[0]
-        return "{brand} {product_name}". format(**result)
+#     q = factual.table('products-cpg').filters({"upc":upc})
+#     if q.data():
+#         result = q.data()[0]
+#         return "{brand} {product_name}". format(**result)
 
-    return None
+#     return None
 
-@app.route('/lookup/<upc>')
-def look_up_test(upc):
-    return look_up_upc(upc)
+# @app.route('/lookup-and-save/<upc>')
+# def lookup_and_save(upc):
 
-@app.route('/lookup-and-save/<upc>')
-def lookup_and_save(upc):
-
-    name = look_up_upc(upc, True)
-    consumable = Consumable.query.filter_by(upc=upc).first()
+#     name = look_up_upc(upc, True)
+#     consumable = Consumable.query.filter_by(upc=upc).first()
     
-    if (consumable == None):
-        consumable = Consumable(upc, name)
-        db.session.add(consumable)
+#     if (consumable == None):
+#         consumable = Consumable(upc, name)
+#         db.session.add(consumable)
     
-    else:
-        consumable.name = name
+#     else:
+#         consumable.name = name
     
-    db.session.commit()
+#     db.session.commit()
     
-    consumable = Consumable.query.filter_by(upc=upc).first()
-    return str(consumable)
+#     consumable = Consumable.query.filter_by(upc=upc).first()
+#     return str(consumable)
 
 admin = Admin(app, name='Beverage-O-Meter Admin')
 admin.add_view(ModelView(Consumable, db.session))
