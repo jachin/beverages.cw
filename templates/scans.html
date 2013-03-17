@@ -1,0 +1,53 @@
+<html>
+
+	<head>
+		<title>Scans (last 10)</title>
+
+		<script type="text/javascript" src="/static/javascript/jquery-1.9.1.min.js"></script>
+
+		<script type="text/javascript" src="/static/javascript/raphael-min.js"></script>
+		<script type="text/javascript" src="/static/javascript/g.raphael-min.js"></script>
+		<script type="text/javascript" src="/static/javascript/g.pie-min.js"></script>
+
+	</head>
+
+	<body>
+
+		<h1>The last 10 scans.</h1>
+
+		<table>
+
+			<tr>
+				<th>ID</th>
+				<th>#</th>
+				<th>Name</th>
+				<th>UPC</th>
+			</tr>
+
+			{% for scan in scans %}
+			<tr>
+
+				<td>
+					{{ scan.id }}
+				</td>
+				<td>
+					{{ scan.total_number }}
+				</td>
+				<td>
+					{% if scan.name == None %}
+					<i>{{ scan.upc }}</i>
+					{% else %}
+					<b>{{ scan.name }}</b>
+					{% endif %}
+				</td>
+				<td>{{ scan.upc }}</td>
+				<td>{{ scan.datetime_cst_human }}</td>
+
+			</tr>
+
+			{% endfor %}
+		</table>
+
+	</body>
+
+</html>

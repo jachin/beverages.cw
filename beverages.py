@@ -6,6 +6,7 @@ import simplejson
 from pprint import pprint
 from datetime import datetime
 from operator import itemgetter
+import logging
 
 import pytz
 
@@ -131,6 +132,28 @@ def look_up_upc( upc ):
     if upc in known_upcs:
         return known_upcs[upc]
     return None
+
+
+def parse_url_date_time ( datetime_str, start_of_day=True ):
+
+    dt = None
+
+    try:
+        dt = datetime.strptime(datetime_str, '%Y-%m-%d  %H:%M:%S')
+        return dt
+    except ValueError:
+        pass
+
+    try:
+        dt = datetime.strptime(datetime_str, '%Y-%m-%d')
+        if start_of_day:
+            dt = dt.replace(hour=0, minute=0, second=0)
+        else:
+            dt = dt.replace(hour=23, minute=59, second=59)
+    except ValueError:
+        logging.error("invalid date: {0}".format(datetime_str))
+
+    return dt
 
 
 @app.route('/')
@@ -300,10 +323,12 @@ def show_all():
 def show_consumables():
     
     drinks = []
-    for consumeable in Consumable.query.all():
+    for consumable in Consumable.query.all():
         
-        drink_data = consumeable.serialize()
-        total_number = Consumed.query.filter_by(consumable = consumeable.id).count()
+        drink_data = consumable.serialize()
+        total_number = Consumed.query.filter_by(
+            consumable = consumable.id
+        ).count()
         drink_data['total_number'] = total_number
         drinks.append(drink_data)
 
@@ -314,13 +339,33 @@ def show_consumables():
         return jsonify( drinks=drinks )
     else:
         return render_template('drinks.html', drinks=drinks)
-    
 
 
 @app.route('/drink/<int:consumable_id>')
+@app.route('/drink/<int:consumable_id>/')
 def show_one_consumable(consumable_id):
+
+    start_date_str = request.args.get('start_date', '')
+    end_date   = request.args.get('end_date', '')
+
+    start_date = parse_url_date_time(
+        request.args.get('start_date', ''),
+        start_of_day=True
+    )
+    end_date = parse_url_date_time(
+        request.args.get('end_date', ''),
+        start_of_day=False
+    )
+
     json_data = []
     query = Consumed.query.filter_by(consumable = consumable_id)
+
+    if start_date:
+        query = query.filter(Consumed.datetime >= start_date)
+
+    if end_date:
+        query = query.filter(Consumed.datetime <= end_date)
+
     for consumed in query.all():
         json_data.append(consumed.serialize())
     return simplejson.dumps( json_data )

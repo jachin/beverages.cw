@@ -1,3 +1,6 @@
+List of beverages
+/drink/
+
 
 
 Creating Database
