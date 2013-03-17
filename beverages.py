@@ -5,6 +5,7 @@ import urllib2
 import simplejson
 from pprint import pprint
 from datetime import datetime
+from operator import itemgetter
 
 import pytz
 
@@ -26,33 +27,47 @@ central_tz = pytz.timezone('US/Central')
 # The following are bar codes that are not really beverages. Most of them got
 #   there for testing.
 bad_upcs = [
-    '4205541228',
-    '978032134693',
-    '978156592470',
-    '978136594313',
-    '97805652010',
-    '08432500187'
-    '09998807196',
-    '5315',
-    '088749344',
-    '854290048',
-    '088110105',
-    '0820016575',
     '01630165745',
-    '0728510322',
+    '03758800824',
     '0491347',
+    '0491347',
+    '0728510322',
+    '0733607411',
     '0733607411',
     '073867351',
+    '073867351',
+    '0820016575',
+    '0820016575',
     '0832123609',
+    '0832123609',
+    '08432500187'
+    '088110105',
+    '088110105',
+    '088749344',
+    '088749344',
+    '09998807196',
+    '09998807196',
+    '4205541228',
+    '5315',
+    '854290048',
+    '854290048',
+    '978032134693',
+    '97805652010',
+    '978136594313',
+    '978156592470',
 ]
 
+
 known_upcs = {
-    '6112690173': 'Red Bull - Sugar Free',
-    '784811169':  'Monster',
-    '784811268': 'Monster Low Cal',
     '012303': 'Pepsi',
     '05100187291': 'V8 V-Fusion (Strawberry Banana)',
+    '07831504':'Dr Pepper',
+    '6112690173': 'Red Bull - Sugar Free',
+    '611269991000': 'Red Bull',
+    '784811169':  'Monster',
+    '784811268': 'Monster Low Cal',
 }
+
 
 class Consumable(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -100,7 +115,9 @@ class Consumed(db.Model):
             'id': self.id,
             'scann_id': self.scann_id,
             'datetime': scan_datetime.strftime("%Y-%m-%d %H:%M:%S %Z%z"),
+            'datetime_gmt_human': scan_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'datetime_cst': scan_datetime_cst.strftime("%Y-%m-%d %H:%M:%S %Z%z"),
+            'datetime_cst_human': scan_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'type_id': self.details.id,
             'upc': self.details.upc,
             'name': self.details.name,
@@ -258,6 +275,18 @@ def update_consumable():
     return render_template('update_consumable_name.html', **stats)
 
 
+@app.route('/scans/')
+def scans():
+    scans = []
+    for consumed in Consumed.query.order_by(Consumed.datetime.desc())[:10]:
+        scans.append(consumed.serialize())
+
+    if request.is_xhr:
+        return jsonify( scans=scans )
+    else:
+        return render_template('scans.html', scans=scans)
+
+
 @app.route('/all/')
 def show_all():
     json_data = []
@@ -277,6 +306,9 @@ def show_consumables():
         total_number = Consumed.query.filter_by(consumable = consumeable.id).count()
         drink_data['total_number'] = total_number
         drinks.append(drink_data)
+
+    # Sort by the total number of drinks
+    drinks = sorted(drinks, key=itemgetter('total_number'), reverse=True) 
 
     if request.is_xhr:
         return jsonify( drinks=drinks )
