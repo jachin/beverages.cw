@@ -1,11 +1,12 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import urllib2
 import simplejson
 from pprint import pprint
 from datetime import datetime
 
 import pytz
-
-# from factual import Factual
 
 from flask import Flask, request, session, url_for, render_template, flash, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -14,7 +15,6 @@ from sqlalchemy.ext.serializer import loads, dumps
 from flask.ext.admin import Admin, BaseView, expose
 from flask.ext.admin.contrib.sqlamodel import ModelView
 
-
 from contextlib import closing
 
 app = Flask(__name__)
@@ -22,6 +22,37 @@ app.config.from_pyfile('../beverages.cfg', silent=False)
 db = SQLAlchemy(app)
 
 central_tz = pytz.timezone('US/Central')
+
+# The following are bar codes that are not really beverages. Most of them got
+#   there for testing.
+bad_upcs = [
+    '4205541228',
+    '978032134693',
+    '978156592470',
+    '978136594313',
+    '97805652010',
+    '08432500187'
+    '09998807196',
+    '5315',
+    '088749344',
+    '854290048',
+    '088110105',
+    '0820016575',
+    '01630165745',
+    '0728510322',
+    '0491347',
+    '0733607411',
+    '073867351',
+    '0832123609',
+]
+
+known_upcs = {
+    '6112690173': 'Red Bull - Sugar Free',
+    '784811169':  'Monster',
+    '784811268': 'Monster Low Cal',
+    '012303': 'Pepsi',
+    '05100187291': 'V8 V-Fusion (Strawberry Banana)',
+}
 
 class Consumable(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -33,7 +64,7 @@ class Consumable(db.Model):
         lazy='dynamic'
     )
 
-    def __init__(self, upc, name):
+    def __init__(self, upc, name=None):
         self.upc = upc
         self.name= name
 
@@ -77,6 +108,12 @@ class Consumed(db.Model):
 
     def __repr__(self):
         return '<Consumed %r>' % (self.id)
+
+
+def look_up_upc( upc ):
+    if upc in known_upcs:
+        return known_upcs[upc]
+    return None
 
 
 @app.route('/')
@@ -174,8 +211,16 @@ def update_database():
 
     for scan in scans:
         stats['number_of_scans'] += 1
+
+        if scan['upc'] in bad_upcs:
+            # skip any bad upcs
+            continue
+
         if Consumable.query.filter_by(upc = scan['upc']).count() == 0:
-            consumable = Consumable(scan['upc'])
+
+            name = look_up_upc(scan['upc'])
+
+            consumable = Consumable(scan['upc'], name)
             db.session.add(consumable)
             db.session.commit()
             stats['number_of_new_consumables'] += 1
@@ -201,6 +246,18 @@ def update_database():
     return render_template('update_database.html', **stats)
 
 
+@app.route('/update_consumable/')
+def update_consumable():
+    for consumable in Consumable.query.filter_by(name = None):
+        name = look_up_upc(consumable.upc)
+        if name:
+            consumable.name = name
+            db.session.commit()
+
+    stats = {}
+    return render_template('update_consumable_name.html', **stats)
+
+
 @app.route('/all/')
 def show_all():
     json_data = []
@@ -208,6 +265,7 @@ def show_all():
         json_data.append(consumed.serialize())
 
     return simplejson.dumps( json_data )
+
 
 @app.route('/drinks/')
 def show_consumables():
@@ -236,58 +294,12 @@ def show_one_consumable(consumable_id):
     return simplejson.dumps( json_data )
 
 
-# def look_up_upc(upc, force_external_lookup=False):
-#     # use database
-#     consumeable = Consumable.query.filter_by(upc=upc).first()
-#     if (consumeable != None):
-#         return consumeable.name
-
-#     # use eandata.com
-#     api_key = 'E37966CA511E8E1C'
-#     url = 'http://eandata.com/feed.php'
-#     mode = 'json'
-#     method = 'find'
-#     result = urllib2.urlopen(url + '?keycode=' + api_key + '&mode=' + mode + '&' + method + '=' + upc).read()
-#     result = simplejson.loads(str(result))
-#     if (result['product']['product']):
-#         return result['product']['product']
-        
-#     # use factual
-#     factual = Factual(
-#         '1psULPx7BQfmamX3bnkOnR7NWkcPRKcjnSvazvXF'
-#         , 'Eu8sIGOyXIPrq3jHAudGjkPea4v5v813jJcxOOTW'
-#     )
-
-#     q = factual.table('products-cpg').filters({"upc":upc})
-#     if q.data():
-#         result = q.data()[0]
-#         return "{brand} {product_name}". format(**result)
-
-#     return None
-
-# @app.route('/lookup-and-save/<upc>')
-# def lookup_and_save(upc):
-
-#     name = look_up_upc(upc, True)
-#     consumable = Consumable.query.filter_by(upc=upc).first()
-    
-#     if (consumable == None):
-#         consumable = Consumable(upc, name)
-#         db.session.add(consumable)
-    
-#     else:
-#         consumable.name = name
-    
-#     db.session.commit()
-    
-#     consumable = Consumable.query.filter_by(upc=upc).first()
-#     return str(consumable)
-
 admin = Admin(app, name='Beverage-O-Meter Admin')
 admin.add_view(ModelView(Consumable, db.session))
 admin.add_view(ModelView(Consumed, db.session))
 
 if __name__ == '__main__':
+    db.create_all()
     app.debug = True
     app.run(host='0.0.0.0')
 
