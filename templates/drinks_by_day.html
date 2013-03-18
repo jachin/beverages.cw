@@ -1,0 +1,62 @@
+<html>
+
+	<head>
+		<title>Drinks By Day</title>
+		<script type="text/javascript" src="/static/javascript/Chart.js"></script>
+		<script type="text/javascript" src="/static/javascript/jquery-1.9.1.min.js"></script>
+
+		<meta name = "viewport" content = "initial-scale = 1, user-scalable = no">
+		<style>
+			canvas{
+			}
+		</style>
+
+	</head>
+
+	<body>
+
+
+		<h1>Drinks By Day</h1>
+
+		<canvas id="canvas" height="450" width="5000"></canvas>
+
+		<script>
+
+			$.ajax({
+				url: '/drinks/by/day'
+				, dataType: 'json'
+				, success: function( data ) {
+
+					var labels = [];
+					var dataset = [];
+
+					for (var key in data) {
+						var day_data = data[key];
+
+						labels.push(key);
+						dataset.push(day_data.length)
+					}
+
+					var lineChartData = {
+						labels: labels,
+						datasets: [
+							{
+								fillColor : "rgba(220,220,220,0.5)",
+								strokeColor : "rgba(220,220,220,1)",
+								pointColor : "rgba(220,220,220,1)",
+								pointStrokeColor : "#fff",
+								data : dataset
+							}
+						]
+					}
+
+					var myLine = new Chart(document.getElementById("canvas").getContext("2d")).Line(lineChartData);
+				}
+			});
+
+		
+		</script>
+
+	</body>
+
+</html>

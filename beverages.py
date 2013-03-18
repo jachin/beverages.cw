@@ -167,6 +167,7 @@ def show_stats():
     }
     return render_template('stats.html', **data)
 
+
 @app.route('/days/<day_string>')
 def days(day_string):
     days = {}
@@ -187,6 +188,7 @@ def days(day_string):
     }
 
     return simplejson.dumps( days )
+
     
 @app.route('/graph')
 def graph():
@@ -369,6 +371,50 @@ def show_one_consumable(consumable_id):
     for consumed in query.all():
         json_data.append(consumed.serialize())
     return simplejson.dumps( json_data )
+
+
+@app.route('/drinks/by/day')
+def show_drinks_by_day():
+
+    if not request.is_xhr:
+        return render_template('drinks_by_day.html')
+
+    start_date_str = request.args.get('start_date', '')
+    end_date   = request.args.get('end_date', '')
+
+    start_date = parse_url_date_time(
+        request.args.get('start_date', ''),
+        start_of_day=True
+    )
+    end_date = parse_url_date_time(
+        request.args.get('end_date', ''),
+        start_of_day=False
+    )
+
+    data = {}
+
+    query = db.session.query(Consumed)
+
+    if start_date:
+        query = query.filter(Consumed.datetime >= start_date)
+
+    if end_date:
+        query = query.filter(Consumed.datetime <= end_date)
+
+    for consumed in query.all():
+
+        datetime_gmt = consumed.datetime.replace(tzinfo=pytz.utc)
+        datetime_cst = datetime_gmt.astimezone(central_tz)
+
+        day_str = datetime_cst.strftime("%Y-%m-%d")
+
+        if day_str in data:
+            data[day_str].append(consumed.serialize())
+        else:
+            data[day_str] = [ consumed.serialize(), ]
+
+    return jsonify( data )
+
 
 
 admin = Admin(app, name='Beverage-O-Meter Admin')
