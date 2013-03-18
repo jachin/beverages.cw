@@ -395,6 +395,8 @@ def show_drinks_by_day():
 
     query = db.session.query(Consumed)
 
+    query.order_by(Consumed.datetime)
+
     if start_date:
         query = query.filter(Consumed.datetime >= start_date)
 

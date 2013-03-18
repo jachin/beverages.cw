@@ -22,10 +22,39 @@
 
 		<script>
 
+			function sort_data ( a, b ) {
+				var all = [];
+
+				for (var i = 0; i < b.length; i++) {
+					all.push({ 'a': a[i], 'b': b[i] });
+				}
+
+				all.sort(function(a, b) {
+				  return a.a - b.a;
+				});
+
+				a_sorted = [];
+				b_sorted = [];
+
+				for (var i = 0; i < all.length; i++) {
+					a_sorted.push(all[i].a);
+					b_sorted.push(all[i].b);
+				}
+
+				// console.log(a_sorted, b_sorted);
+
+				return {a_sorted: a_sorted, b_sorted:b_sorted};
+			}
+
 			$.ajax({
 				url: '/drinks/by/day'
 				, dataType: 'json'
 				, success: function( data ) {
+
+					$.map(data, function(element, i){
+						console.log(element);
+						console.log(i);
+					})
 
 					var labels = [];
 					var dataset = [];
@@ -36,6 +65,10 @@
 						labels.push(key);
 						dataset.push(day_data.length)
 					}
+
+					// sorted_data = sort_data(labels, dataset);
+					// labels = sorted_data.a_sorted;
+					// dataset = sorted_data.b_sorted;
 
 					var lineChartData = {
 						labels: labels,
