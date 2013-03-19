@@ -118,7 +118,7 @@ class Consumed(db.Model):
             'datetime': scan_datetime.strftime("%Y-%m-%d %H:%M:%S %Z%z"),
             'datetime_gmt_human': scan_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'datetime_cst': scan_datetime_cst.strftime("%Y-%m-%d %H:%M:%S %Z%z"),
-            'datetime_cst_human': scan_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            'datetime_cst_human': scan_datetime_cst.strftime("%Y-%m-%d %H:%M:%S"),
             'type_id': self.details.id,
             'upc': self.details.upc,
             'name': self.details.name,
