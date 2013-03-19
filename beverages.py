@@ -62,7 +62,7 @@ bad_upcs = [
 known_upcs = {
     '012303': 'Pepsi',
     '05100187291': 'V8 V-Fusion (Strawberry Banana)',
-    '0510018737': 'V8 V-Fusion (Pomegrannate Blueberry)'
+    '0510018737': 'V8 V-Fusion (Pomegrannate Blueberry)',
     '07831504':'Dr Pepper',
     '6112690173': 'Red Bull - Sugar Free',
     '611269991000': 'Red Bull',
