@@ -62,11 +62,17 @@ bad_upcs = [
 known_upcs = {
     '012303': 'Pepsi',
     '05100187291': 'V8 V-Fusion (Strawberry Banana)',
+    '0510018737': 'V8 V-Fusion (Pomegrannate Blueberry)'
     '07831504':'Dr Pepper',
     '6112690173': 'Red Bull - Sugar Free',
     '611269991000': 'Red Bull',
     '784811169':  'Monster',
     '784811268': 'Monster Low Cal',
+    '049504': 'Cherry Coke-a-Cola',
+    '012660': 'Diet Mnt Dew',
+    '012508': 'Diet Pepsi',
+    '794522200788': 'Tazo Awake Black Tea (Box of 20)',
+    '04900004632': 'Coke-a-Cola (MX)',
 }
 
 
