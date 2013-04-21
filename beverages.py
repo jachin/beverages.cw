@@ -3,10 +3,11 @@
 
 import urllib2
 import simplejson
-from pprint import pprint
-from datetime import datetime
+from pprint import pprint, pformat
+from datetime import datetime, timedelta
 from operator import itemgetter
 import logging
+import collections
 
 import pytz
 
@@ -386,7 +387,7 @@ def show_drinks_by_day():
         return render_template('drinks_by_day.html')
 
     start_date_str = request.args.get('start_date', '')
-    end_date   = request.args.get('end_date', '')
+    end_date_str   = request.args.get('end_date', '')
 
     start_date = parse_url_date_time(
         request.args.get('start_date', ''),
@@ -421,7 +422,25 @@ def show_drinks_by_day():
         else:
             data[day_str] = [ consumed.serialize(), ]
 
-    return jsonify( data )
+    
+    # Add empty ararys for the days with no scans.
+    previous_day = None
+    one_day = timedelta(days=1)
+    for day, scans in sorted(data.items()):
+        if previous_day == None:
+            previous_day = parse_url_date_time(day)
+        else:
+            current_day = previous_day + one_day
+            day = parse_url_date_time(day)
+            while current_day < day:
+                current_day_str = current_day.strftime("%Y-%m-%d")
+                data[current_day_str] = []
+                current_day = current_day + one_day
+            previous_day = current_day
+
+    data = collections.OrderedDict(sorted(data.items()))
+
+    return jsonify( drinks_by_day=data.items() )
 
 
 

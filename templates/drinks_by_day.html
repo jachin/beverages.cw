@@ -22,53 +22,22 @@
 
 		<script>
 
-			function sort_data ( a, b ) {
-				var all = [];
-
-				for (var i = 0; i < b.length; i++) {
-					all.push({ 'a': a[i], 'b': b[i] });
-				}
-
-				all.sort(function(a, b) {
-				  return a.a - b.a;
-				});
-
-				a_sorted = [];
-				b_sorted = [];
-
-				for (var i = 0; i < all.length; i++) {
-					a_sorted.push(all[i].a);
-					b_sorted.push(all[i].b);
-				}
-
-				// console.log(a_sorted, b_sorted);
-
-				return {a_sorted: a_sorted, b_sorted:b_sorted};
-			}
+			//'/drinks/by/day?start_date=2012-11-15&end_date=2012-12-31'
 
 			$.ajax({
-				url: '/drinks/by/day'
+				url: '/drinks/by/day?start_date=2012-11-15'
 				, dataType: 'json'
 				, success: function( data ) {
-
-					$.map(data, function(element, i){
-						console.log(element);
-						console.log(i);
-					})
+					var drinks_by_day = data['drinks_by_day']
 
 					var labels = [];
 					var dataset = [];
 
-					for (var key in data) {
-						var day_data = data[key];
-
-						labels.push(key);
-						dataset.push(day_data.length)
+					for (var i in drinks_by_day) {
+						var day_data = drinks_by_day[i];
+						labels.push(day_data[0]);
+						dataset.push(day_data[1].length)
 					}
-
-					// sorted_data = sort_data(labels, dataset);
-					// labels = sorted_data.a_sorted;
-					// dataset = sorted_data.b_sorted;
 
 					var lineChartData = {
 						labels: labels,
@@ -87,7 +56,6 @@
 				}
 			});
 
-		
 		</script>
 
 	</body>
