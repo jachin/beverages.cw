@@ -7,7 +7,7 @@ from pprint import pprint, pformat
 from datetime import datetime, timedelta
 from operator import itemgetter
 import logging
-import collections
+import ordereddict
 
 import pytz
 
@@ -410,7 +410,7 @@ def show_one_consumable(consumable_id):
                 current_day = current_day + one_day
             previous_day = current_day
 
-    data = collections.OrderedDict(sorted(data.items()))
+    data = ordereddict.OrderedDict(sorted(data.items()))
 
     return jsonify( drink_by_day=data.items() )
 
