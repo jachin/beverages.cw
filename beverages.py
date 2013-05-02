@@ -350,9 +350,12 @@ def show_consumables():
         return render_template('drinks.html', drinks=drinks)
 
 
-@app.route('/drink/<int:consumable_id>')
-@app.route('/drink/<int:consumable_id>/')
+@app.route('/drink/<int:consumable_id>/by/day')
+@app.route('/drink/<int:consumable_id>/by/day/')
 def show_one_consumable(consumable_id):
+
+    if not request.is_xhr:
+        return render_template('drink_by_day.html')
 
     start_date_str = request.args.get('start_date', '')
     end_date   = request.args.get('end_date', '')
@@ -366,8 +369,11 @@ def show_one_consumable(consumable_id):
         start_of_day=False
     )
 
-    json_data = []
-    query = Consumed.query.filter_by(consumable = consumable_id)
+    data = {}
+
+    query = Consumed.query.filter(consumed == consumable_id)
+
+    query.order_by(Consumed.datetime)
 
     if start_date:
         query = query.filter(Consumed.datetime >= start_date)
@@ -376,8 +382,37 @@ def show_one_consumable(consumable_id):
         query = query.filter(Consumed.datetime <= end_date)
 
     for consumed in query.all():
-        json_data.append(consumed.serialize())
-    return simplejson.dumps( json_data )
+
+        datetime_gmt = consumed.datetime.replace(tzinfo=pytz.utc)
+        datetime_cst = datetime_gmt.astimezone(central_tz)
+
+        day_str = datetime_cst.strftime("%Y-%m-%d")
+
+        if day_str in data:
+            data[day_str].append(consumed.serialize())
+        else:
+            data[day_str] = [ consumed.serialize(), ]
+
+    pprint(data)
+
+    # Add empty ararys for the days with no scans.
+    previous_day = None
+    one_day = timedelta(days=1)
+    for day, scans in sorted(data.items()):
+        if previous_day == None:
+            previous_day = parse_url_date_time(day)
+        else:
+            current_day = previous_day + one_day
+            day = parse_url_date_time(day)
+            while current_day < day:
+                current_day_str = current_day.strftime("%Y-%m-%d")
+                data[current_day_str] = []
+                current_day = current_day + one_day
+            previous_day = current_day
+
+    data = collections.OrderedDict(sorted(data.items()))
+
+    return jsonify( drink_by_day=data.items() )
 
 
 @app.route('/drinks/by/day')
