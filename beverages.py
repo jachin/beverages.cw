@@ -473,7 +473,7 @@ def show_drinks_by_day():
                 current_day = current_day + one_day
             previous_day = current_day
 
-    data = collections.OrderedDict(sorted(data.items()))
+    data = ordereddict.OrderedDict(sorted(data.items()))
 
     return jsonify( drinks_by_day=data.items() )
 
