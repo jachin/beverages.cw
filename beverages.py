@@ -161,6 +161,11 @@ def parse_url_date_time(datetime_str, start_of_day=True):
 
 
 @app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/stats')
 def show_stats():
     scans = []
     for consumed in Consumed.query.all():
