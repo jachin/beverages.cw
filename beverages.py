@@ -329,6 +329,7 @@ def show_all():
     return simplejson.dumps(json_data)
 
 
+@app.route('/drinks')
 @app.route('/drinks/')
 def show_consumables():
 
@@ -414,7 +415,7 @@ def show_one_consumable(consumable_id):
 @app.route('/drinks/by/day')
 def show_drinks_by_day():
 
-    if not request.is_xhr:
+    if not request.is_xhr and not request.args.get('json', False):
         return render_template('drinks_by_day.html')
 
     start_date = parse_url_date_time(
@@ -431,6 +432,9 @@ def show_drinks_by_day():
     query = db.session.query(Consumed)
 
     query.order_by(Consumed.datetime)
+
+    logging.info(start_date)
+    logging.info(end_date)
 
     if start_date:
         query = query.filter(Consumed.datetime >= start_date)
