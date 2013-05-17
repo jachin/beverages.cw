@@ -3,7 +3,7 @@
 
 import urllib2
 import simplejson
-from pprint import pprint, pformat
+from pprint import pprint
 from datetime import datetime, timedelta
 from operator import itemgetter
 import logging
@@ -11,14 +11,11 @@ import ordereddict
 
 import pytz
 
-from flask import Flask, request, session, url_for, render_template, flash, jsonify
+from flask import Flask, request, render_template, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
-from sqlalchemy import or_, and_, desc
-from sqlalchemy.ext.serializer import loads, dumps
-from flask.ext.admin import Admin, BaseView, expose
+from sqlalchemy import desc
+from flask.ext.admin import Admin
 from flask.ext.admin.contrib.sqlamodel import ModelView
-
-from contextlib import closing
 
 app = Flask(__name__)
 app.config.from_pyfile('../beverages.cfg', silent=False)
@@ -64,7 +61,7 @@ known_upcs = {
     '012303': 'Pepsi',
     '05100187291': 'V8 V-Fusion (Strawberry Banana)',
     '0510018737': 'V8 V-Fusion (Pomegrannate Blueberry)',
-    '07831504':'Dr Pepper',
+    '07831504': 'Dr Pepper',
     '6112690173': 'Red Bull - Sugar Free',
     '611269991000': 'Red Bull',
     '784811169':  'Monster',
@@ -89,7 +86,7 @@ class Consumable(db.Model):
 
     def __init__(self, upc, name=None):
         self.upc = upc
-        self.name= name
+        self.name = name
 
     def serialize(self):
         return {
@@ -107,10 +104,10 @@ class Consumed(db.Model):
     scann_id = db.Column(db.Integer, unique=True, index=True)
     datetime = db.Column(db.DateTime())
     consumable = db.Column(
-        'consumable_id'
-        , db.Integer
-        , db.ForeignKey("consumable.id")
-        , nullable=False
+        'consumable_id',
+        db.Integer,
+        db.ForeignKey("consumable.id"),
+        nullable=False
     )
 
     def serialize(self):
@@ -135,13 +132,13 @@ class Consumed(db.Model):
         return '<Consumed %r>' % (self.id)
 
 
-def look_up_upc( upc ):
+def look_up_upc(upc):
     if upc in known_upcs:
         return known_upcs[upc]
     return None
 
 
-def parse_url_date_time ( datetime_str, start_of_day=True ):
+def parse_url_date_time(datetime_str, start_of_day=True):
 
     dt = None
 
@@ -187,22 +184,21 @@ def days(day_string):
 
         if date_string not in days.keys():
             days[date_string] = []
-            
         days[date_string].append(consumed.serialize())
 
     data = {
         'days': days
     }
 
-    return simplejson.dumps( days )
+    return simplejson.dumps(data)
 
-    
+
 @app.route('/graph')
 def graph():
 
     hours = {}
     drinks = {}
-    
+
     for consumable in Consumable.query.all():
         consumable = consumable.serialize()
         drinks[consumable['upc']] = {'id': consumable['id'], 'name': consumable['name']}
@@ -214,7 +210,7 @@ def graph():
 
         if hour not in hours.keys():
             hours[hour] = {}
-            
+
         if consumed['upc'] not in hours[hour].keys():
             hours[hour][consumed['upc']] = 0
 
@@ -251,7 +247,7 @@ def update_database():
     opener = urllib2.build_opener()
     f = opener.open(req)
     scans = simplejson.load(f)
-    
+
     stats = {
         'number_of_scans': 0,
         'number_of_new_consumables': 0,
@@ -265,28 +261,28 @@ def update_database():
             # skip any bad upcs
             continue
 
-        if Consumable.query.filter_by(upc = scan['upc']).count() == 0:
-
+        query = Consumable.query.filter_by(upc=scan['upc'])
+        if query.count() == 0:
             name = look_up_upc(scan['upc'])
 
             consumable = Consumable(scan['upc'], name)
             db.session.add(consumable)
             db.session.commit()
             stats['number_of_new_consumables'] += 1
-        consumable = Consumable.query.filter_by(upc = scan['upc']).first()
-        if Consumed.query.filter_by(scann_id = scan['id']).count() == 0:
+        consumable = Consumable.query.filter_by(upc=scan['upc']).first()
+        if Consumed.query.filter_by(scann_id=scan['id']).count() == 0:
 
             timestamp = datetime.strptime(
-                scan['timestamp']
-                , '%Y-%m-%dT%H:%M:%S'
+                scan['timestamp'],
+                '%Y-%m-%dT%H:%M:%S'
             )
 
             timestamp = timestamp.replace(tzinfo=pytz.utc)
 
             consumed = Consumed(
-                scann_id=scan['id']
-                , datetime=timestamp
-                , consumable=consumable.id
+                scann_id=scan['id'],
+                datetime=timestamp,
+                consumable=consumable.id
             )
             db.session.add(consumed)
             db.session.commit()
@@ -297,7 +293,7 @@ def update_database():
 
 @app.route('/update_consumable/')
 def update_consumable():
-    for consumable in Consumable.query.filter_by(name = None):
+    for consumable in Consumable.query.filter_by(name=None):
         name = look_up_upc(consumable.upc)
         if name:
             consumable.name = name
@@ -314,7 +310,7 @@ def scans():
         scans.append(consumed.serialize())
 
     if request.is_xhr:
-        return jsonify( scans=scans )
+        return jsonify(scans=scans)
     else:
         return render_template('scans.html', scans=scans)
 
@@ -325,27 +321,25 @@ def show_all():
     for consumed in Consumed.query.all():
         json_data.append(consumed.serialize())
 
-    return simplejson.dumps( json_data )
+    return simplejson.dumps(json_data)
 
 
 @app.route('/drinks/')
 def show_consumables():
-    
+
     drinks = []
     for consumable in Consumable.query.all():
-        
+
         drink_data = consumable.serialize()
-        total_number = Consumed.query.filter_by(
-            consumable = consumable.id
-        ).count()
+        total_number = Consumed.query.filter_by(consumable=consumable.id).count()
         drink_data['total_number'] = total_number
         drinks.append(drink_data)
 
     # Sort by the total number of drinks
-    drinks = sorted(drinks, key=itemgetter('total_number'), reverse=True) 
+    drinks = sorted(drinks, key=itemgetter('total_number'), reverse=True)
 
     if request.is_xhr:
-        return jsonify( drinks=drinks )
+        return jsonify(drinks=drinks)
     else:
         return render_template('drinks.html', drinks=drinks)
 
@@ -356,9 +350,6 @@ def show_one_consumable(consumable_id):
 
     if not request.is_xhr:
         return render_template('drink_by_day.html')
-
-    start_date_str = request.args.get('start_date', '')
-    end_date   = request.args.get('end_date', '')
 
     start_date = parse_url_date_time(
         request.args.get('start_date', ''),
@@ -371,7 +362,7 @@ def show_one_consumable(consumable_id):
 
     data = {}
 
-    query = Consumed.query.filter(consumed == consumable_id)
+    query = Consumed.query.filter_by(consumed=consumable_id)
 
     query.order_by(Consumed.datetime)
 
@@ -391,7 +382,7 @@ def show_one_consumable(consumable_id):
         if day_str in data:
             data[day_str].append(consumed.serialize())
         else:
-            data[day_str] = [ consumed.serialize(), ]
+            data[day_str] = [consumed.serialize(), ]
 
     pprint(data)
 
@@ -399,7 +390,7 @@ def show_one_consumable(consumable_id):
     previous_day = None
     one_day = timedelta(days=1)
     for day, scans in sorted(data.items()):
-        if previous_day == None:
+        if previous_day is None:
             previous_day = parse_url_date_time(day)
         else:
             current_day = previous_day + one_day
@@ -412,7 +403,7 @@ def show_one_consumable(consumable_id):
 
     data = ordereddict.OrderedDict(sorted(data.items()))
 
-    return jsonify( drink_by_day=data.items() )
+    return jsonify(drink_by_day=data.items())
 
 
 @app.route('/drinks/by/day')
@@ -420,9 +411,6 @@ def show_drinks_by_day():
 
     if not request.is_xhr:
         return render_template('drinks_by_day.html')
-
-    start_date_str = request.args.get('start_date', '')
-    end_date_str   = request.args.get('end_date', '')
 
     start_date = parse_url_date_time(
         request.args.get('start_date', ''),
@@ -455,14 +443,13 @@ def show_drinks_by_day():
         if day_str in data:
             data[day_str].append(consumed.serialize())
         else:
-            data[day_str] = [ consumed.serialize(), ]
+            data[day_str] = [consumed.serialize(), ]
 
-    
     # Add empty ararys for the days with no scans.
     previous_day = None
     one_day = timedelta(days=1)
     for day, scans in sorted(data.items()):
-        if previous_day == None:
+        if previous_day is None:
             previous_day = parse_url_date_time(day)
         else:
             current_day = previous_day + one_day
@@ -475,8 +462,7 @@ def show_drinks_by_day():
 
     data = ordereddict.OrderedDict(sorted(data.items()))
 
-    return jsonify( drinks_by_day=data.items() )
-
+    return jsonify(drinks_by_day=data.items())
 
 
 admin = Admin(app, name='Beverage-O-Meter Admin')
@@ -487,4 +473,3 @@ if __name__ == '__main__':
     db.create_all()
     app.debug = True
     app.run(host='0.0.0.0')
-
