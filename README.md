@@ -2,7 +2,7 @@
 
 ## /drinks/by/day ##
 
-### Parameters
+### GET Parameters
 
 #### json
 
@@ -73,14 +73,42 @@ Here is some example json output with 3 days. Only the first day has scans in it
   ]
 }
 ```
-## /drinks/by/day ##
+## /drink/*id*/by/day/ ##
 
-### Parameters ###
+### URL Parameters
 
-json: 1|0
-start_date: 
+An integer ID of a consumable.
+
+**key**: `id`
+
+**value:** *integer*
 
 
+### GET Parameters ###
+
+#### json
+
+Foces a json response.
+
+**key**: `json`
+
+**value:** *null* | `true`
+
+### start_date
+
+Limit the result set to scans that happened on or after this day.
+
+**key**: `start_date`
+
+**value:** *null* | `YYYY-MM-DD`
+
+### end_date
+
+Limit the result set to scans that happend on or before this day.
+
+**key**: `end_date`
+
+**value:** *null* | `YYYY-MM-DD`
 
 List of beverages
 /drink/

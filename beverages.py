@@ -354,7 +354,7 @@ def show_consumables():
 @app.route('/drink/<int:consumable_id>/by/day/')
 def show_one_consumable(consumable_id):
 
-    if not request.is_xhr:
+    if not request.is_xhr and not request.args.get('json', False):
         return render_template('drink_by_day.html')
 
     start_date = parse_url_date_time(
@@ -368,7 +368,7 @@ def show_one_consumable(consumable_id):
 
     data = {}
 
-    query = Consumed.query.filter_by(consumed=consumable_id)
+    query = Consumed.query.filter_by(consumable=consumable_id)
 
     query.order_by(Consumed.datetime)
 
@@ -389,8 +389,6 @@ def show_one_consumable(consumable_id):
             data[day_str].append(consumed.serialize())
         else:
             data[day_str] = [consumed.serialize(), ]
-
-    pprint(data)
 
     # Add empty ararys for the days with no scans.
     previous_day = None
