@@ -58,20 +58,52 @@ bad_upcs = [
 
 
 known_upcs = {
-    '012303': 'Pepsi',
-    '05100187291': 'V8 V-Fusion (Strawberry Banana)',
-    '0510018737': 'V8 V-Fusion (Pomegrannate Blueberry)',
-    '07831504': 'Dr Pepper',
-    '6112690173': 'Red Bull - Sugar Free',
-    '611269991000': 'Red Bull',
     '784811169':  'Monster',
     '784811268': 'Monster Low Cal',
+
+    '07831504':  'Dr. Pepper',
+    '0783209': 'Diet Dr Pepper',
+
+    '05100187291': 'V8 V-Fusion (Strawberry Banana)',
+    '0510018737': 'V8 V-Fusion (Pomegrannate Blueberry)',
+
+    '6112690173': 'Red Bull - Sugar Free',
+    '611269991000': 'Red Bull',
+
     '049504': 'Cherry Coke-a-Cola',
-    '012660': 'Diet Mnt Dew',
-    '012508': 'Diet Pepsi',
-    '794522200788': 'Tazo Awake Black Tea (Box of 20)',
     '04900004632': 'Coke-a-Cola (MX)',
+    '04900042566': 'Coke Zero',
+    "0496306": 'Coke-a-Cola',
+    '04965802': 'Diet Coke',
+
+    '012660': 'Diet Mnt Dew',
+
+    '012303': 'Pepsi',
+    '012508': 'Diet Pepsi',
+    '0120015272':  'Pepsi Next',
+
+    '794522200788': 'Tazo Awake Black Tea (Box of 20)',
+
+    '01299310619': 'La Croix (Pamplemousse)',
+    '0733602751':  'La Croix (Lime)',
+    '07336077518': 'La Croix (Lemon)',
+    "07336074519": 'La Croix (Berry)',
+
+    '613008725914': 'Arnold Palmer Lite',
 }
+
+
+class BeverageGroup(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50))
+    consumables = db.relationship(
+        'Consumable',
+        backref='beverage_group',
+        lazy='dynamic'
+    )
+
+    def __repr__(self):
+        return self.name
 
 
 class Consumable(db.Model):
@@ -82,6 +114,10 @@ class Consumable(db.Model):
         'Consumed',
         backref='details',
         lazy='dynamic'
+    )
+    beverage_group_id = db.Column(
+        db.Integer,
+        db.ForeignKey('beverage_group.id')
     )
 
     def __init__(self, upc, name=None):
@@ -452,7 +488,7 @@ def show_drinks_by_day():
         else:
             data[day_str] = [consumed.serialize(), ]
 
-    # Add empty ararys for the days with no scans.
+    # Add empty arrays for the days with no scans.
     previous_day = None
     one_day = timedelta(days=1)
     for day, scans in sorted(data.items()):
@@ -475,8 +511,10 @@ def show_drinks_by_day():
 admin = Admin(app, name='Beverage-O-Meter Admin')
 admin.add_view(ModelView(Consumable, db.session))
 admin.add_view(ModelView(Consumed, db.session))
+admin.add_view(ModelView(BeverageGroup, db.session))
 
 if __name__ == '__main__':
     db.create_all()
     app.debug = True
+    app.secret_key = "'z`\xe6\xd7\xe5\x95\xdd2\x87\xd8\x1enL\x06W\x12\xd3\x17\xads\x19f\r"
     app.run(host='0.0.0.0')
