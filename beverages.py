@@ -17,6 +17,8 @@ from sqlalchemy import desc
 from flask.ext.admin import Admin
 from flask.ext.admin.contrib.sqlamodel import ModelView
 
+from crossdomain import crossdomain
+
 app = Flask(__name__)
 app.config.from_pyfile('../beverages.cfg', silent=False)
 db = SQLAlchemy(app)
@@ -388,6 +390,7 @@ def show_consumables():
 
 @app.route('/drink/<int:consumable_id>/by/day')
 @app.route('/drink/<int:consumable_id>/by/day/')
+@crossdomain(origin='*')
 def show_one_consumable(consumable_id):
 
     if not request.is_xhr and not request.args.get('json', False):
@@ -447,6 +450,7 @@ def show_one_consumable(consumable_id):
 
 
 @app.route('/drinks/by/day')
+@crossdomain(origin='*')
 def show_drinks_by_day():
 
     if not request.is_xhr and not request.args.get('json', False):
