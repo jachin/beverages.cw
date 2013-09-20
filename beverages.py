@@ -516,5 +516,4 @@ admin.add_view(ModelView(BeverageGroup, db.session))
 if __name__ == '__main__':
     db.create_all()
     app.debug = True
-    app.secret_key = "'z`\xe6\xd7\xe5\x95\xdd2\x87\xd8\x1enL\x06W\x12\xd3\x17\xads\x19f\r"
     app.run(host='0.0.0.0')
