@@ -105,7 +105,7 @@ class BeverageGroup(db.Model):
     )
 
     def __repr__(self):
-        return self.name
+        return "%s" % self.name
 
 
 class Consumable(db.Model):
@@ -390,7 +390,7 @@ def show_consumables():
 
 @app.route('/drink/<int:consumable_id>/by/day')
 @app.route('/drink/<int:consumable_id>/by/day/')
-@crossdomain(origin='*')
+@crossdomain(origin='*', headers=['X-Requested-With', 'Content-Type'])
 def show_one_consumable(consumable_id):
 
     if not request.is_xhr and not request.args.get('json', False):
