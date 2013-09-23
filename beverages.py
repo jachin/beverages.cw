@@ -352,7 +352,7 @@ def scans():
     for consumed in Consumed.query.order_by(Consumed.datetime.desc())[:10]:
         scans.append(consumed.serialize())
 
-    if request.is_xhr:
+    if request.is_xhr and not request.args.get('json', False):
         return jsonify(scans=scans)
     else:
         return render_template('scans.html', scans=scans)
@@ -390,7 +390,7 @@ def show_consumables():
 
 @app.route('/drink/<int:consumable_id>/by/day')
 @app.route('/drink/<int:consumable_id>/by/day/')
-@crossdomain(origin='*', headers=['X-Requested-With', 'Content-Type'])
+@crossdomain(origin='*')
 def show_one_consumable(consumable_id):
 
     if not request.is_xhr and not request.args.get('json', False):
@@ -510,6 +510,12 @@ def show_drinks_by_day():
     data = ordereddict.OrderedDict(sorted(data.items()))
 
     return jsonify(drinks_by_day=data.items())
+
+
+@app.route('/drinks/by/beverage')
+def show_drinks_by_beverage():
+    if not request.is_xhr and not request.args.get('json', False):
+        return render_template('blank.html')
 
 
 admin = Admin(app, name='Beverage-O-Meter Admin')
