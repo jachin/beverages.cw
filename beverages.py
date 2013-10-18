@@ -2,16 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import urllib2
+import urllib
+import urlparse
 import simplejson
-from pprint import pprint
+from pprint import pformat
 from datetime import datetime, timedelta
 from operator import itemgetter
-import logging
 import ordereddict
 
 import pytz
 
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, jsonify, redirect
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import desc
 from flask.ext.admin import Admin
@@ -193,9 +194,20 @@ def parse_url_date_time(datetime_str, start_of_day=True):
         else:
             dt = dt.replace(hour=23, minute=59, second=59)
     except ValueError:
-        logging.error("invalid date: {0}".format(datetime_str))
+        app.logger.error("invalid date: {0}".format(datetime_str))
 
     return dt
+
+
+def update_url_parameters(url, params):
+    url_parts = list(urlparse.urlparse(url))
+
+    url_query = dict(urlparse.parse_qsl(url_parts[4]))
+    url_query.update(params)
+    url_parts[4] = urllib.urlencode(url_query)
+
+    new_url = urlparse.urlunparse(url_parts)
+    return new_url
 
 
 @app.route('/')
@@ -373,7 +385,6 @@ def show_consumables():
 
     drinks = []
     for consumable in Consumable.query.all():
-
         drink_data = consumable.serialize()
         total_number = Consumed.query.filter_by(consumable=consumable.id).count()
         drink_data['total_number'] = total_number
@@ -382,7 +393,7 @@ def show_consumables():
     # Sort by the total number of drinks
     drinks = sorted(drinks, key=itemgetter('total_number'), reverse=True)
 
-    if request.is_xhr:
+    if request.is_xhr or request.args.get('json', False):
         return jsonify(drinks=drinks)
     else:
         return render_template('drinks.html', drinks=drinks)
@@ -449,12 +460,9 @@ def show_one_consumable(consumable_id):
     return jsonify(drink_by_day=data.items())
 
 
-@app.route('/drinks/by/day')
+@app.route('/drinks/by/day', methods=['GET'])
 @crossdomain(origin='*')
 def show_drinks_by_day():
-
-    if not request.is_xhr and not request.args.get('json', False):
-        return render_template('drinks_by_day.html')
 
     start_date = parse_url_date_time(
         request.args.get('start_date', ''),
@@ -465,14 +473,24 @@ def show_drinks_by_day():
         start_of_day=False
     )
 
+    if start_date is None and end_date is None:
+        start_date = datetime.today() - timedelta(weeks=2)
+        end_date = datetime.today()
+
+        new_url = update_url_parameters(request.url, {
+            'start_date': start_date.strftime("%Y-%m-%d"),
+            'end_date': end_date.strftime("%Y-%m-%d"),
+        })
+        return redirect(new_url)
+
+    if not request.is_xhr and not request.args.get('json', False):
+        return render_template('drinks_by_day.html')
+
     data = {}
 
     query = db.session.query(Consumed)
 
     query.order_by(Consumed.datetime)
-
-    logging.info(start_date)
-    logging.info(end_date)
 
     if start_date:
         query = query.filter(Consumed.datetime >= start_date)
