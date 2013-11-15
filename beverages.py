@@ -518,7 +518,27 @@ def show_drinks_by_beverage():
 def ping():
     upc = request.args.get('upc')
 
-    return render_template('ping.html', upc=upc)
+    query = Consumable.query.filter_by(upc=upc)
+
+    consumable = query.first()
+
+    if consumable is not None:
+        consumable_name = consumable.name
+        group = BeverageGroup.query.filter_by(id=consumable.beverage_group_id).first()
+        if group:
+            group_name = group.name
+        else:
+            group_name = 'Unknown'
+    else:
+        consumable_name = 'Unknown'
+        group_name = 'Unknown'
+
+    return render_template(
+        'ping.html',
+        upc=upc,
+        name=consumable_name,
+        group=group_name
+    )
 
 
 class BeverageGroupModelView(ModelView):

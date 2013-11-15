@@ -2,12 +2,50 @@
 
 	<head>
 		<title>Ping</title>
+
+		<script type="text/javascript" src="/static/javascript/jquery-2.0.3.min.js"></script>
 	</head>
 
 	<body>
-		Ping!
+		<h2>Ping!</h2>
 
-		{{upc}}
+		<p>
+			<strong>UPC:</strong> <span id="upc" data-upc="{{upc}}">{{upc}}</span>
+		</p>
+		<p>
+			<strong>Beverage Name:</strong> <span id="name" data-name="{{name}}">{{name}}</span>
+		</p>
+		<p>
+			<strong>Group:</strong> <span id="group" data-group="{{group}}">{{group}}</span>
+		</p>
+
+		<script>
+
+			$(function() {
+				//ga('send', 'event', 'button', 'click', 'nav-buttons');
+				var upc = $('#upc').data('upc');
+				var name = $('#name').data('name');
+				var group = $('#group').data('group');
+				var label = group + ": " + name;
+
+				console.log(upc);
+				console.log(name);
+				console.log(group);
+				console.log(label);
+
+				ga(
+					'send',
+					'event', {
+						'eventCategory': 'Beverage Fridge',
+						'eventAction': 'Drink',
+						'eventLabel': label,
+						'eventValue': 1
+					}
+				);
+			});
+			
+			//ga('send', 'event', 'button', 'click', 'nav buttons', 4);
+		</script>
 	</body>
 
 </html>
