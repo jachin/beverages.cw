@@ -516,7 +516,7 @@ def show_drinks_by_beverage():
 @app.route('/ping')
 @app.route('/ping/')
 def ping():
-    
+    upc = request.args.get('upc')
 
 
 class BeverageGroupModelView(ModelView):
