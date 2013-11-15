@@ -11,6 +11,7 @@ from operator import itemgetter
 import ordereddict
 
 import pytz
+import yaml
 
 from flask import Flask, request, render_template, jsonify, redirect
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -25,75 +26,6 @@ app.config.from_pyfile('../beverages.cfg', silent=False)
 db = SQLAlchemy(app)
 
 central_tz = pytz.timezone('US/Central')
-
-# The following are bar codes that are not really beverages. Most of them got
-#   there for testing.
-bad_upcs = [
-    '01630165745',
-    '03758800824',
-    '0491347',
-    '0491347',
-    '0728510322',
-    '0733607411',
-    '0733607411',
-    '073867351',
-    '073867351',
-    '0820016575',
-    '0820016575',
-    '0832123609',
-    '0832123609',
-    '08432500187'
-    '088110105',
-    '088110105',
-    '088749344',
-    '088749344',
-    '09998807196',
-    '09998807196',
-    '4205541228',
-    '5315',
-    '854290048',
-    '854290048',
-    '978032134693',
-    '97805652010',
-    '978136594313',
-    '978156592470',
-]
-
-
-known_upcs = {
-    '784811169':  'Monster',
-    '784811268': 'Monster Low Cal',
-
-    '07831504':  'Dr. Pepper',
-    '0783209': 'Diet Dr Pepper',
-
-    '05100187291': 'V8 V-Fusion (Strawberry Banana)',
-    '0510018737': 'V8 V-Fusion (Pomegrannate Blueberry)',
-
-    '6112690173': 'Red Bull - Sugar Free',
-    '611269991000': 'Red Bull',
-
-    '049504': 'Cherry Coke-a-Cola',
-    '04900004632': 'Coke-a-Cola (MX)',
-    '04900042566': 'Coke Zero',
-    "0496306": 'Coke-a-Cola',
-    '04965802': 'Diet Coke',
-
-    '012660': 'Diet Mnt Dew',
-
-    '012303': 'Pepsi',
-    '012508': 'Diet Pepsi',
-    '0120015272':  'Pepsi Next',
-
-    '794522200788': 'Tazo Awake Black Tea (Box of 20)',
-
-    '01299310619': 'La Croix (Pamplemousse)',
-    '0733602751':  'La Croix (Lime)',
-    '07336077518': 'La Croix (Lemon)',
-    "07336074519": 'La Croix (Berry)',
-
-    '613008725914': 'Arnold Palmer Lite',
-}
 
 
 class BeverageGroup(db.Model):
@@ -123,9 +55,10 @@ class Consumable(db.Model):
         db.ForeignKey('beverage_group.id')
     )
 
-    def __init__(self, upc, name=None):
+    def __init__(self, upc, name=None, beverage_group_id=beverage_group_id):
         self.upc = upc
         self.name = name
+        self.beverage_group_id = beverage_group_id
 
     def serialize(self):
         return {
@@ -135,7 +68,7 @@ class Consumable(db.Model):
         }
 
     def __repr__(self):
-        return '<Consumable %r>' % (self.name)
+        return "%s" % self.name
 
 
 class Consumed(db.Model):
@@ -171,10 +104,50 @@ class Consumed(db.Model):
         return '<Consumed %r>' % (self.id)
 
 
-def look_up_upc(upc):
-    if upc in known_upcs:
-        return known_upcs[upc]
-    return None
+def update_groups_and_consumable():
+    stream = open("beverage_data.yaml", 'r')
+    beverages_data = yaml.load(stream)
+
+    for (group_name, beverages) in beverages_data.items():
+        query = BeverageGroup.query.filter_by(name=group_name)
+        if query.count() == 0:
+            group = BeverageGroup(name=group_name)
+            db.session.add(group)
+            db.session.commit()
+            app.logger.debug("Adding beverage group: {}".format(group_name))
+        group = BeverageGroup.query.filter_by(name=group_name).first()
+        for (beverage_name, upc) in beverages.items():
+            query = Consumable.query.filter_by(upc=upc)
+            if query.count() == 0:
+                consumable = Consumable(
+                    upc=upc,
+                    name=beverage_name,
+                    beverage_group_id=group.id
+                )
+                db.session.add(consumable)
+                db.session.commit()
+                app.logger.debug(
+                    "Adding a new consumable '{}'' to the beverage group {}".format(
+                        beverage_name,
+                        group.name
+                    )
+                )
+            consumable = Consumable.query.filter_by(upc=upc).first()
+            if consumable.beverage_group_id != group.id:
+                consumable.beverage_group_id = group.id
+                db.session.commit()
+                app.logger.debug(
+                    "Adding an existing consumable {} to the beverage group {}".format(
+                        beverage_name,
+                        group.name
+                    )
+                )
+
+
+def get_bad_upcs():
+    stream = open("bad_upcs.yaml", 'r')
+    bad_upcs = yaml.load(stream)
+    return bad_upcs
 
 
 def parse_url_date_time(datetime_str, start_of_day=True):
@@ -288,6 +261,9 @@ def demo():
 @app.route('/update_db/')
 def update_database():
 
+    update_groups_and_consumable()
+    bad_upcs = get_bad_upcs()
+
     last_consumed = Consumed.query.order_by(desc(Consumed.scann_id)).first()
 
     if last_consumed is None:
@@ -316,17 +292,19 @@ def update_database():
             # skip any bad upcs
             continue
 
+        # Look for a consumable with a matching UPC
         query = Consumable.query.filter_by(upc=scan['upc'])
-        if query.count() == 0:
-            name = look_up_upc(scan['upc'])
 
-            consumable = Consumable(scan['upc'], name)
+        if query.count() == 0:
+            # If we are unable to find one, make a new one with an empty name.
+            consumable = Consumable(scan['upc'], name='', beverage_group_id=None)
             db.session.add(consumable)
             db.session.commit()
             stats['number_of_new_consumables'] += 1
-        consumable = Consumable.query.filter_by(upc=scan['upc']).first()
-        if Consumed.query.filter_by(scann_id=scan['id']).count() == 0:
 
+        consumable = query.first()
+
+        if Consumed.query.filter_by(scann_id=scan['id']).count() == 0:
             timestamp = datetime.strptime(
                 scan['timestamp'],
                 '%Y-%m-%dT%H:%M:%S'
@@ -346,18 +324,7 @@ def update_database():
     return render_template('update_database.html', **stats)
 
 
-@app.route('/update_consumable/')
-def update_consumable():
-    for consumable in Consumable.query.filter_by(name=None):
-        name = look_up_upc(consumable.upc)
-        if name:
-            consumable.name = name
-            db.session.commit()
-
-    stats = {}
-    return render_template('update_consumable_name.html', **stats)
-
-
+# The last 10 scans
 @app.route('/scans/')
 def scans():
     scans = []
@@ -370,13 +337,14 @@ def scans():
         return render_template('scans.html', scans=scans)
 
 
-@app.route('/all/')
+@app.route('/scans/all')
+@app.route('/scans/all/')
 def show_all():
     json_data = []
     for consumed in Consumed.query.all():
         json_data.append(consumed.serialize())
 
-    return simplejson.dumps(json_data)
+    return jsonify(drinks=json_data)
 
 
 @app.route('/drinks')
@@ -536,10 +504,16 @@ def show_drinks_by_beverage():
         return render_template('blank.html')
 
 
+class BeverageGroupModelView(ModelView):
+    inline_models = [(Consumable, dict(form_columns=['name']))]
+
+    def __init__(self, session):
+        super(BeverageGroupModelView, self).__init__(BeverageGroup, session)
+
 admin = Admin(app, name='Beverage-O-Meter Admin')
 admin.add_view(ModelView(Consumable, db.session))
 admin.add_view(ModelView(Consumed, db.session))
-admin.add_view(ModelView(BeverageGroup, db.session))
+admin.add_view(BeverageGroupModelView(db.session))
 
 if __name__ == '__main__':
     db.create_all()

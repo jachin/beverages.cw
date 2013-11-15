@@ -14,7 +14,8 @@ Foces a json response.
 
 ### start_date
 
-Limit the result set to scans that happened on or after this day.
+Limit the result set to scans that happened on or after this day. This will
+default to 2 weeks from today.
 
 **key**: `start_date`
 
@@ -22,7 +23,8 @@ Limit the result set to scans that happened on or after this day.
 
 ### end_date
 
-Limit the result set to scans that happend on or before this day.
+Limit the result set to scans that happened on or before this day. This will
+default to today.
 
 **key**: `end_date`
 
@@ -104,14 +106,11 @@ Limit the result set to scans that happened on or after this day.
 
 ### end_date
 
-Limit the result set to scans that happend on or before this day.
+Limit the result set to scans that happened on or before this day.
 
 **key**: `end_date`
 
 **value:** *null* | `YYYY-MM-DD`
-
-List of beverages
-/drink/
 
 # Python Stuff #
 
