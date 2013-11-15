@@ -513,6 +513,12 @@ def show_drinks_by_beverage():
         return render_template('blank.html')
 
 
+@app.route('/ping')
+@app.route('/ping/')
+def ping():
+    
+
+
 class BeverageGroupModelView(ModelView):
     inline_models = [(Consumable, dict(form_columns=['name']))]
 
