@@ -518,6 +518,8 @@ def show_drinks_by_beverage():
 def ping():
     upc = request.args.get('upc')
 
+    return render_template('ping.html', upc=upc)
+
 
 class BeverageGroupModelView(ModelView):
     inline_models = [(Consumable, dict(form_columns=['name']))]
