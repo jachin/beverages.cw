@@ -114,7 +114,7 @@ def update_groups_and_consumable():
             group = BeverageGroup(name=group_name)
             db.session.add(group)
             db.session.commit()
-            app.logger.debug("Adding beverage group: {}".format(group_name))
+            app.logger.debug("Adding beverage group: {0}".format(group_name))
         group = BeverageGroup.query.filter_by(name=group_name).first()
         for (beverage_name, upc) in beverages.items():
             query = Consumable.query.filter_by(upc=upc)
@@ -127,7 +127,7 @@ def update_groups_and_consumable():
                 db.session.add(consumable)
                 db.session.commit()
                 app.logger.debug(
-                    "Adding a new consumable '{}'' to the beverage group {}".format(
+                    "Adding a new consumable '{0}' to the beverage group '{1}'".format(
                         beverage_name,
                         group.name
                     )
@@ -137,9 +137,9 @@ def update_groups_and_consumable():
                 consumable.beverage_group_id = group.id
                 db.session.commit()
                 app.logger.debug(
-                    "Adding an existing consumable {} to the beverage group {}".format(
+                    "Adding an existing consumable '{0}'' to the beverage group '{1}'".format(
                         beverage_name,
-                        group_name
+                        group.name
                     )
                 )
 
