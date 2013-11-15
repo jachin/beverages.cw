@@ -132,14 +132,23 @@ def update_groups_and_consumable():
                         group.name
                     )
                 )
-            consumable = Consumable.query.filter_by(upc=upc).first()
+            consumable = query.first()
             if consumable.beverage_group_id != group.id:
                 consumable.beverage_group_id = group.id
                 db.session.commit()
                 app.logger.debug(
-                    "Adding an existing consumable '{0}'' to the beverage group '{1}'".format(
+                    "Adding an existing consumable '{0}' to the beverage group '{1}'".format(
                         beverage_name,
                         group.name
+                    )
+                )
+            if consumable.name != beverage_name:
+                consumable.name = beverage_name
+                db.session.commit()
+                app.logger.debug(
+                    "Updating the UPC '{0}' with the name '{1}'".format(
+                        upc,
+                        beverage_name
                     )
                 )
 
