@@ -139,7 +139,7 @@ def update_groups_and_consumable():
                 app.logger.debug(
                     "Adding an existing consumable {} to the beverage group {}".format(
                         beverage_name,
-                        group.name
+                        group_name
                     )
                 )
 
