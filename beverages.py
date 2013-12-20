@@ -17,7 +17,7 @@ from flask import Flask, request, render_template, jsonify, redirect
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import desc
 from flask.ext.admin import Admin
-from flask.ext.admin.contrib.sqla import ModelView
+from flask.ext.admin.contrib.sqlamodel import ModelView
 
 from crossdomain import crossdomain
 
