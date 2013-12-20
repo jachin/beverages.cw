@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 import urllib2
@@ -17,7 +17,7 @@ from flask import Flask, request, render_template, jsonify, redirect
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import desc
 from flask.ext.admin import Admin
-from flask.ext.admin.contrib.sqlamodel import ModelView
+from flask.ext.admin.contrib.sqla import ModelView
 
 from crossdomain import crossdomain
 
@@ -417,7 +417,7 @@ def show_one_consumable(consumable_id):
         else:
             data[day_str] = [consumed.serialize(), ]
 
-    # Add empty ararys for the days with no scans.
+    # Add empty arrays for the days with no scans.
     previous_day = None
     one_day = timedelta(days=1)
     for day, scans in sorted(data.items()):
@@ -516,6 +516,9 @@ def show_drinks_by_beverage():
 @app.route('/ping')
 @app.route('/ping/')
 def ping():
+
+    from pyga.requests import Tracker, Event, Session, Visitor
+
     upc = request.args.get('upc')
 
     query = Consumable.query.filter_by(upc=upc)
@@ -532,6 +535,17 @@ def ping():
     else:
         consumable_name = 'Unknown'
         group_name = 'Unknown'
+
+    tracker = Tracker('UA-5298189-10', 'beverages.cw')
+
+    event_label = "{0}: {1}".format(group_name, consumable_name)
+
+    event = Event('Beverage Fridge', 'Drink', event_label, 1)
+
+    session = Session()
+    visitor = Visitor()
+
+    tracker.track_event(event, session, visitor)
 
     return render_template(
         'ping.html',
