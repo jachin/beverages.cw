@@ -533,7 +533,7 @@ def ping():
         else:
             group_name = 'Unknown'
     else:
-        consumable_name = 'Unknown'
+        consumable_name = upc
         group_name = 'Unknown'
 
     tracker = Tracker('UA-5298189-10', 'beverages.cw')
