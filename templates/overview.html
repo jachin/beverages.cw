@@ -1,0 +1,38 @@
+<html>
+
+	<head>
+		<title>Overview</title>
+		<script type="text/javascript" src="/static/javascript/jquery-1.9.1.min.js"></script>
+	</head>
+
+	<body>
+
+		<h1>Overview</h1>
+
+		<p>
+			Start Date: <span id="start_date"></span>
+		</p>
+		<p>
+			End Date: <span id="end_date"></span>
+		</p>
+		<p>
+			Total Number of Scans: <span id="consumed_count"></span>
+		</p>
+
+		<script>
+
+			$.ajax({
+				url: document.URL
+				, dataType: 'json'
+				, success: function( data ) {
+					console.log(data);
+					$('#start_date').text(data.overview.start_date);
+					$('#end_date').text(data.overview.end_date);
+					$('#consumed_count').text(data.overview.consumed_count);
+				}
+			});
+
+		</script>
+	</body>
+
+</html>
