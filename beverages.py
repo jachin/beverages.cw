@@ -315,7 +315,7 @@ def update_database():
 
     if last_consumed is None:
         req = urllib2.Request(
-            "http://192.168.22.193/"
+            "http://192.168.22.57/"
         )
     else:
         req = urllib2.Request(
