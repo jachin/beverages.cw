@@ -319,7 +319,7 @@ def update_database():
         )
     else:
         req = urllib2.Request(
-            "http://192.168.22.193/after/{0}".format(last_consumed.scann_id)
+            "http://192.168.22.57/after/{0}".format(last_consumed.scann_id)
         )
 
     opener = urllib2.build_opener()

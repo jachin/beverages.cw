@@ -22,3 +22,5 @@ requests
 requests-oauthlib
 simplejson
 wsgiref
+ordereddict
+PyYaml
