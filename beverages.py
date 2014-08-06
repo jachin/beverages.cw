@@ -26,6 +26,7 @@ app.config.from_pyfile('../beverages.cfg', silent=False)
 db = SQLAlchemy(app)
 
 central_tz = pytz.timezone('US/Central')
+pi_address = 'http://192.168.22.21/'
 
 
 class BeverageGroup(db.Model):
@@ -315,11 +316,11 @@ def update_database():
 
     if last_consumed is None:
         req = urllib2.Request(
-            "http://192.168.22.57/"
+            pi_address
         )
     else:
         req = urllib2.Request(
-            "http://192.168.22.57/after/{0}".format(last_consumed.scann_id)
+            "{0}after/{1}".format(pi_address, last_consumed.scann_id)
         )
 
     opener = urllib2.build_opener()
