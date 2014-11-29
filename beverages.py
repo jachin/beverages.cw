@@ -594,6 +594,38 @@ def ping():
     )
 
 
+@app.route('/graph/beverages/by/time')
+@app.route('/graph/beverages/by/time/')
+def graph_beverages_by_time():
+    query = db.session.query(Consumed)
+    query.order_by(Consumed.datetime)
+
+    drinks_by_hour = {}
+
+    for consumed in query.all():
+        datetime_gmt = consumed.datetime.replace(tzinfo=pytz.utc)
+        datetime_cst = datetime_gmt.astimezone(central_tz)
+
+        hour = datetime_cst.strftime("%H")
+
+        hour = int(hour);
+
+        if hour not in drinks_by_hour:
+            drinks_by_hour[hour] = {
+                'hour': hour,
+                'number': 0
+            }
+
+        drinks_by_hour[hour]['number'] += 1
+
+    drinks_by_hour = sorted(drinks_by_hour.values(), key=itemgetter('hour'))
+
+    data = {
+        'drinks_by_hour': simplejson.dumps(drinks_by_hour)
+    }
+
+    return render_template('graph_beverages_by_time.html', **data)
+
 class BeverageGroupModelView(ModelView):
     inline_models = [(Consumable, dict(form_columns=['name']))]
 
