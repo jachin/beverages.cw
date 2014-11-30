@@ -11,8 +11,25 @@ module.exports = function(grunt) {
   grunt.initConfig({
     bower_concat: {
       all: {
-        dest: 'static/js/bower.js'
+        dest: 'static/js/bower.js',
+        cssDest: 'static/css/bower.css'
+      }
+    },
+    uglify: {
+      bower: {
+        options: {
+          mangle: true,
+          compress: true
+        },
+        files: {
+          'static/js/bower.min.js': 'static/js/bower.js'
+        }
       }
     }
   });
+
+  grunt.registerTask('buildbower', [
+    'bower_concat',
+    'uglify:bower'
+  ]);
 };
