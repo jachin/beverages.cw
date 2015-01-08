@@ -618,6 +618,13 @@ def graph_beverages_by_time():
 
         drinks_by_hour[hour]['number'] += 1
 
+    for hour in range(24):
+        if hour not in drinks_by_hour:
+            drinks_by_hour[hour] = {
+                'hour': hour,
+                'number': 0
+            }
+
     drinks_by_hour = sorted(drinks_by_hour.values(), key=itemgetter('hour'))
 
     data = {

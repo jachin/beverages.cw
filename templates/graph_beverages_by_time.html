@@ -3,34 +3,41 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title>Beverage-o-Meter</title>
-	<script language="javascript" type="text/javascript" src="{{ url_for('static', filename='javascript/jquery-2.1.1.min.js') }}"></script>
-	<script language="javascript" type="text/javascript" src="{{ url_for('static', filename='javascript/d3/d3.min.js') }}"></script>
-	<script language="javascript" type="text/javascript" src="{{ url_for('static', filename='javascript/metricsgraphics.min.js') }}"></script>
-	<script language="javascript" type="text/javascript">
-		var drinks_by_hour = {{ drinks_by_hour|safe }};
+	<link href="/static/css/bower.css" rel="stylesheet" media="screen">
+	<script src="/static/js/bower.min.js"></script>
 
-		$(document).ready(function() {
-			data_graphic({
-				title: "Drinks By Hour",
-				description: "The total number of drinks scanned by hour.",
-				data: drinks_by_hour,
-				width: 400,
-				height: 250,
-				target: "#result",
-				x_accessor: "hour",
-				y_accessor: "number",
-				interpolate: "monotone"
-			});
-		});
-	</script>
 </head>
 <body>
 
 	<div id="header">
-		<h2>Beverage-o-Meter</h2>
+		<h1>Beverage-o-Meter</h1>
 
-		<div id="result"></div>
+		<h2>Total Number of Beverages By the Hour</h2>
+		<div class="ct-chart ct-major-tenth"></div>
 	</div>
+
+	<script language="javascript" type="text/javascript">
+		var drinksByHour = {{ drinks_by_hour|safe }};
+
+		var labels = [];
+		var number_of_drinks_by_hour = [];
+
+		for (var i = 0; i < drinksByHour.length; i++) {
+			labels.push(drinksByHour[i].hour);
+			number_of_drinks_by_hour.push(drinksByHour[i].number);
+		};
+
+		var data = {
+			labels: labels,
+			series: Array(number_of_drinks_by_hour)
+		};
+
+		var options = {
+			lineSmooth: false,
+		};
+
+		new Chartist.Line('.ct-chart', data, options);
+	</script>
 
 </body>
 </html>
