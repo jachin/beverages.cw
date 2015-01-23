@@ -198,6 +198,73 @@ def index():
     return render_template('index.html')
 
 
+    @app.route('/update_db')
+    @app.route('/update_db/')
+    def update_database():
+
+        update_groups_and_consumable()
+        bad_upcs = get_bad_upcs()
+
+        last_consumed = Consumed.query.order_by(desc(Consumed.scann_id)).first()
+
+        if last_consumed is None:
+            req = urllib2.Request(
+                ip_address
+            )
+        else:
+            req = urllib2.Request(
+                "{0}after/{1}".format(ip_address, last_consumed.scann_id)
+            )
+
+        opener = urllib2.build_opener()
+        f = opener.open(req)
+        scans = simplejson.load(f)
+
+        stats = {
+            'number_of_scans': 0,
+            'number_of_new_consumables': 0,
+            'number_of_new_consumed': 0,
+        }
+
+        for scan in scans:
+            stats['number_of_scans'] += 1
+
+            if scan['upc'] in bad_upcs:
+                # skip any bad upcs
+                continue
+
+            # Look for a consumable with a matching UPC
+            query = Consumable.query.filter_by(upc=scan['upc'])
+
+            if query.count() == 0:
+                # If we are unable to find one, make a new one with an empty name.
+                consumable = Consumable(scan['upc'], name='', beverage_group_id=None)
+                db.session.add(consumable)
+                db.session.commit()
+                stats['number_of_new_consumables'] += 1
+
+            consumable = query.first()
+
+            if Consumed.query.filter_by(scann_id=scan['id']).count() == 0:
+                timestamp = datetime.strptime(
+                    scan['timestamp'],
+                    '%Y-%m-%dT%H:%M:%S'
+                )
+
+                timestamp = timestamp.replace(tzinfo=pytz.utc)
+
+                consumed = Consumed(
+                    scann_id=scan['id'],
+                    datetime=timestamp,
+                    consumable=consumable.id
+                )
+                db.session.add(consumed)
+                db.session.commit()
+                stats['number_of_new_consumed'] += 1
+
+        return render_template('update_database.html', **stats)
+
+
 @app.route('/days/<day_string>')
 def days(day_string):
     days = {}
@@ -219,75 +286,9 @@ def days(day_string):
     return simplejson.dumps(data)
 
 
-@app.route('/update_db')
-@app.route('/update_db/')
-def update_database():
-
-    update_groups_and_consumable()
-    bad_upcs = get_bad_upcs()
-
-    last_consumed = Consumed.query.order_by(desc(Consumed.scann_id)).first()
-
-    if last_consumed is None:
-        req = urllib2.Request(
-            ip_address
-        )
-    else:
-        req = urllib2.Request(
-            "{0}after/{1}".format(ip_address, last_consumed.scann_id)
-        )
-
-    opener = urllib2.build_opener()
-    f = opener.open(req)
-    scans = simplejson.load(f)
-
-    stats = {
-        'number_of_scans': 0,
-        'number_of_new_consumables': 0,
-        'number_of_new_consumed': 0,
-    }
-
-    for scan in scans:
-        stats['number_of_scans'] += 1
-
-        if scan['upc'] in bad_upcs:
-            # skip any bad upcs
-            continue
-
-        # Look for a consumable with a matching UPC
-        query = Consumable.query.filter_by(upc=scan['upc'])
-
-        if query.count() == 0:
-            # If we are unable to find one, make a new one with an empty name.
-            consumable = Consumable(scan['upc'], name='', beverage_group_id=None)
-            db.session.add(consumable)
-            db.session.commit()
-            stats['number_of_new_consumables'] += 1
-
-        consumable = query.first()
-
-        if Consumed.query.filter_by(scann_id=scan['id']).count() == 0:
-            timestamp = datetime.strptime(
-                scan['timestamp'],
-                '%Y-%m-%dT%H:%M:%S'
-            )
-
-            timestamp = timestamp.replace(tzinfo=pytz.utc)
-
-            consumed = Consumed(
-                scann_id=scan['id'],
-                datetime=timestamp,
-                consumable=consumable.id
-            )
-            db.session.add(consumed)
-            db.session.commit()
-            stats['number_of_new_consumed'] += 1
-
-    return render_template('update_database.html', **stats)
-
-
 # The last 10 scans
-@app.route('/scans/')
+@app.route('/scans/last-10')
+@app.route('/scans/last-10/')
 def scans():
     scans = []
     for consumed in Consumed.query.order_by(Consumed.datetime.desc())[:10]:
@@ -296,7 +297,7 @@ def scans():
     if request.is_xhr and not request.args.get('json', False):
         return jsonify(scans=scans)
     else:
-        return render_template('scans.html', scans=scans)
+        return render_template('scans_last_10.html', scans=scans)
 
 
 @app.route('/scans/all')

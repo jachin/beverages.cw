@@ -1,48 +1,17 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Beverage-O-Meter</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <!-- Bootstrap -->
-        <link href="/static/css/bower.css" rel="stylesheet" media="screen">
-    </head>
-    <body>
-        <div class="container">
-            <div class="jumbotron">
-                <h1>Beverage-O-Meter</h1>
-                <p>
-                    Tracking what comes out of the fridge since 2012.
-                </p>
-            </div>
-
-            <!-- Example row of columns -->
-            <div class="row">
-                <div class="span12">
-                    <p>
-                        <ul>
-                            <li><a href="https://github.com/jachin/beverages.cw/blob/master/README.md">Documentation</a></li>
-                            <li><a href="/drinks">Drinks and UPC database searches</a></li>
-                            <li><a href="/update_db">Update Database</a> - Grab the lastest data from the Rasberry PI</li>
-                            <li><a href="/admin/consumableview/">Consumable Admin</a> - Assocate UPCs with Beverages</li>
-                            <li><a href="/scans">Last 10 scan</a></li>
-                            <li><a href="/scans/all/">All JSON</a> - All the scans in JSON in order.</li>
-                            <li><a href="/drinks/by/day">Graph of the total number of drinks by day</a>.</li>
-                            <li><a href="https://github.com/jachin/beverages.cw">Git Hub Repo</a></li>
-                        </ul>
-                    <p>
-                </div>
-            </div>
-
-            <hr>
-
-            <footer>
-                <p>&copy; Clockwork Active Media Systems 2015</p>
-            </footer>
-
-        </div> <!-- /container -->
-
-        <script src="/static/js/bower.min.js"></script>
-    </body>
-
-
-</html>
+{% extends "base.html" %}
+{% block content %}
+<div class="col-md-12">
+    <p>
+        <ul>
+            <li><a href="https://github.com/jachin/beverages.cw/blob/master/README.md">Documentation</a></li>
+            <li><a href="/drinks">Drinks and UPC database searches</a></li>
+            <li><a href="/update_db">Update Database</a> - Grab the lastest data from the Rasberry PI</li>
+            <li><a href="/admin/consumableview/">Consumable Admin</a> - Assocate UPCs with Beverages</li>
+            <li><a href="/scans">Last 10 scan</a></li>
+            <li><a href="/scans/all/">All JSON</a> - All the scans in JSON in order.</li>
+            <li><a href="/drinks/by/day">Graph of the total number of drinks by day</a>.</li>
+            <li><a href="https://github.com/jachin/beverages.cw">Git Hub Repo</a></li>
+        </ul>
+    <p>
+</div>
+{% endblock %}

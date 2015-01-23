@@ -1,30 +1,18 @@
-<!doctype html>
-<html>
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<title>Beverage-o-Meter: Year Summary</title>
-	<link href="/static/css/bower.css" rel="stylesheet" media="screen">
-	<script src="/static/js/bower.min.js"></script>
+{% extends "base.html" %}
 
-</head>
-<body>
+{% block title %}
+Beverage-O-Meter: Year Summary
+{% endblock %}
 
-	<div id="header">
-		<h1>Beverage-o-Meter</h1>
+{% block content %}
+<h2>Year Summary</h2>
 
-		<h2>Year Summary</h2>
-
-		<ul>
-		{% for drinks_by_year in drinks_by_years %}
-			<li>
-				<strong>{{ drinks_by_year.year }}:</strong>
-				{{ drinks_by_year.number }}
-			</li>
-		{% endfor %}
-		</ul>
-
-	</div>
-
-
-</body>
-</html>
+<ul>
+{% for drinks_by_year in drinks_by_years %}
+    <li>
+        <strong>{{ drinks_by_year.year }}:</strong>
+        {{ drinks_by_year.number }}
+    </li>
+{% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            {% block title %}Beverage-O-Meter{% endblock %}
+        </title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- Bootstrap -->
+        <link href="/static/css/bower.css" rel="stylesheet" media="screen">
+        {% block styles %}{% endblock %}
+    </head>
+    <body>
+        <div class="container">
+            <div class="jumbotron">
+                <h1>Beverage-O-Meter</h1>
+                <p>
+                    Tracking what comes out of the fridge since 2012.
+                </p>
+            </div>
+
+            <div class="row">{% block content %}{% endblock %}</div>
+
+            <hr>
+
+            <footer>
+                <p>&copy; Clockwork Active Media Systems 2015</p>
+            </footer>
+        </div>
+
+        <script src="/static/js/bower.min.js"></script>
+
+        {% block scripts %}{% endblock %}
+    </body>
+</html>

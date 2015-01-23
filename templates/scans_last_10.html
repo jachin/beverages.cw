@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}
+Beverage-O-Meter: The last 10 scans.
+{% endblock %}
+
+{% block content %}
+
+<h1>The last 10 scans.</h1>
+
+<table class="table">
+
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>UPC</th>
+        <th>CST</th>
+        <th>GMT</th>
+    </tr>
+
+    {% for scan in scans %}
+    <tr>
+
+        <td>
+            {{ scan.id }}
+        </td>
+        <td>
+            {% if scan.name == None %}
+            <i>{{ scan.upc }}</i>
+            {% else %}
+            <b>{{ scan.name }}</b>
+            {% endif %}
+        </td>
+        <td>{{ scan.upc }}</td>
+        <td>{{ scan.datetime_cst_human }}</td>
+        <td>{{ scan.datetime_gmt_human }}</td>
+
+    </tr>
+
+    {% endfor %}
+</table>
+
+{% endblock %}
