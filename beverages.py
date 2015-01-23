@@ -219,42 +219,6 @@ def days(day_string):
     return simplejson.dumps(data)
 
 
-@app.route('/graph')
-def graph():
-
-    hours = {}
-    drinks = {}
-
-    for consumable in Consumable.query.all():
-        consumable = consumable.serialize()
-        drinks[consumable['upc']] = {'id': consumable['id'], 'name': consumable['name']}
-
-    for consumed in Consumed.query.all():
-
-        hour = consumed.datetime.strftime("%H")
-        consumed = consumed.serialize()
-
-        if hour not in hours.keys():
-            hours[hour] = {}
-
-        if consumed['upc'] not in hours[hour].keys():
-            hours[hour][consumed['upc']] = 0
-
-        hours[hour][consumed['upc']] += 1
-
-    data = {
-        'drinks': simplejson.dumps(drinks),
-        'hours': simplejson.dumps(hours)
-    }
-
-    return render_template('graph.html', **data)
-
-
-@app.route('/demo/')
-def demo():
-    return render_template('demo.html')
-
-
 @app.route('/update_db')
 @app.route('/update_db/')
 def update_database():
