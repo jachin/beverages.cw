@@ -198,56 +198,6 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/stats')
-def show_stats():
-    scans = []
-    for consumed in Consumed.query.all():
-        scans.append(consumed.serialize())
-    data = {
-        'scans': scans
-    }
-    return render_template('stats.html', **data)
-
-
-@app.route('/overview')
-@app.route('/overview/')
-def overview():
-
-    if not request.is_xhr and not request.args.get('json', False):
-        return render_template('overview.html')
-
-    start_date = parse_url_date_time(
-        request.args.get('start_date', ''),
-        start_of_day=True
-    )
-    end_date = parse_url_date_time(
-        request.args.get('end_date', ''),
-        start_of_day=False
-    )
-
-    query = db.session.query(Consumed)
-
-    if start_date:
-        query = query.filter(Consumed.datetime >= start_date)
-        start_date_str = start_date.strftime("%Y-%m-%d")
-    else:
-        start_date_str = ''
-
-    if end_date:
-        query = query.filter(Consumed.datetime <= end_date)
-        end_date_str = end_date.strftime("%Y-%m-%d")
-    else:
-        end_date_str = ''
-
-    overview = {
-        'start_date': start_date_str,
-        'end_date': end_date_str,
-        'consumed_count': query.count()
-    }
-
-    return jsonify(overview=overview)
-
-
 @app.route('/days/<day_string>')
 def days(day_string):
     days = {}
