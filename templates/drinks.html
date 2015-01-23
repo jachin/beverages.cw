@@ -1,63 +1,45 @@
-<html>
+{% extends "base.html" %}
 
-	<head>
-		<title>Drinks</title>
+{% block title %}
+Beverage-O-Meter: Drinks Summary
+{% endblock %}
 
-		<script type="text/javascript" src="/static/javascript/jquery-1.9.1.min.js"></script>
 
-		<script type="text/javascript" src="/static/javascript/raphael-min.js"></script>
-		<script type="text/javascript" src="/static/javascript/g.raphael-min.js"></script>
-		<script type="text/javascript" src="/static/javascript/g.pie-min.js"></script>
+{% block content %}
+<table class="table">
 
-	</head>
+    <tr>
+        <th>ID</th>
+        <th>#</th>
+        <th>Name</th>
+        <th>UPC</th>
+    </tr>
+    {% for drink in drinks %}
+    <tr>
 
-	<body>
+        <td>
+            {{ drink.id }}
+        </td>
+        <td>
+            {{ drink.total_number }}
+        </td>
+        <td><b>{{ drink.name }}</b></td>
+        <td>{{ drink.upc }}</td>
 
-		<table>
+        <td>
+            <a href="http://eandata.com/lookup/{{ drink.upc }}">eandata.com</a>
+        </td>
 
-			<tr>
-				<th>ID</th>
-				<th>#</th>
-				<th>Name</th>
-				<th>UPC</th>
-			</tr>
-			{% for drink in drinks %}
-			<tr>
+        <td>
+            <a href="http://www.upcdatabase.com/item/{{ drink.upc }}">upcdatabase.com</a>
+        </td>
 
-				<td>
-					{{ drink.id }}
-				</td>
-				<td>
-					{{ drink.total_number }}
-				</td>
-				<td><b>{{ drink.name }}</b></td>
-				<td>{{ drink.upc }}</td>
+        <td>
+            <a href="http://www.upc-search.org/perl/upc-search.pl?q={{ drink.upc }}">upc-search.org</a>
+        </td>
 
-				<td>
-					<a href="http://eandata.com/lookup/{{ drink.upc }}">eandata.com</a>
-				</td>
+    </tr>
 
-				<td>
-					<a href="http://www.upcdatabase.com/item/{{ drink.upc }}">upcdatabase.com</a>
-				</td>
-
-				<td>
-					<a href="http://www.checkupc.com/search.php?keyword={{ drink.upc }}">checkupc.com</a>
-				</td>
-
-				<td>
-					<a href="http://www.itemlookup.net/search.php?type=upc&s={{ drink.upc }}">itemlookup.net</a>
-				</td>
-
-				<td>
-					<a href="http://www.upc-search.org/perl/upc-search.pl?q={{ drink.upc }}">upc-search.org</a>
-				</td>
-
-			</tr>
-
-			{% endfor %}
-		</table>
-
-	</body>
-
-</html>
+    {% endfor %}
+</table>
+{% endblock %}

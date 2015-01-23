@@ -1,43 +1,41 @@
+{% extends "base.html" %}
+
+
+{% block title %}
+Beverage-O-Meter: All Beverages By Time
+{% endblock %}
+
 <!doctype html>
-<html>
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<title>Beverage-o-Meter</title>
-	<link href="/static/css/bower.css" rel="stylesheet" media="screen">
-	<script src="/static/js/bower.min.js"></script>
+{% block content %}
 
-</head>
-<body>
+<h2>Total Number of Beverages By the Hour</h2>
+<div class="ct-chart ct-major-tenth"></div>
 
-	<div id="header">
-		<h1>Beverage-o-Meter</h1>
+{% endblock %}
 
-		<h2>Total Number of Beverages By the Hour</h2>
-		<div class="ct-chart ct-major-tenth"></div>
-	</div>
 
-	<script language="javascript" type="text/javascript">
-		var drinksByHour = {{ drinks_by_hour|safe }};
+{% block scripts %}
+<script language="javascript" type="text/javascript">
+    var drinksByHour = {{ drinks_by_hour|safe }};
 
-		var labels = [];
-		var number_of_drinks_by_hour = [];
+    var labels = [];
+    var number_of_drinks_by_hour = [];
 
-		for (var i = 0; i < drinksByHour.length; i++) {
-			labels.push(drinksByHour[i].hour);
-			number_of_drinks_by_hour.push(drinksByHour[i].number);
-		};
+    for (var i = 0; i < drinksByHour.length; i++) {
+        labels.push(drinksByHour[i].hour);
+        number_of_drinks_by_hour.push(drinksByHour[i].number);
+    };
 
-		var data = {
-			labels: labels,
-			series: Array(number_of_drinks_by_hour)
-		};
+    var data = {
+        labels: labels,
+        series: Array(number_of_drinks_by_hour)
+    };
 
-		var options = {
-			lineSmooth: false,
-		};
+    var options = {
+        lineSmooth: false,
+    };
 
-		new Chartist.Line('.ct-chart', data, options);
-	</script>
+    new Chartist.Line('.ct-chart', data, options);
+</script>
 
-</body>
-</html>
+{% endblock %}

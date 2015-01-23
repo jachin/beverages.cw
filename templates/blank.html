@@ -1,39 +1,12 @@
-<html>
+{% extends "base.html" %}
 
-	<head>
-		<title>JSON Endpoint</title>
-		<link href="/static/css/bootstrap.min.css" rel="stylesheet" media="screen">
-	</head>
+{% block title %}
+Beverage-O-Meter: JSON Endpoint
+{% endblock %}
 
-	<body>
+{% block content %}
+<div class="col-xs-12">
+    <h3>This is a JSON end point, so there's not really anything to see here.</h2>
+</div>
 
-		<div class="container">
-			<div class="hero-unit">
-			<h1>Beverage-O-Meter</h1>
-			<p>
-				Tracking what comes out of the fridge since 2012.
-			</p>
-		</div>
-
-		<!-- Example row of columns -->
-		<div class="row">
-			<div class="span12">
-				<p>
-					This is a JSON end point, so there's not really anything to see here.
-				</p>
-			</div>
-		</div>
-
-		<hr>
-
-		<footer>
-			<p>&copy; Clockwork Active Media Systems 2013</p>
-		</footer>
-
-		</div> <!-- /container -->
-
-		<script src="/static/javascript/jquery-1.9.1.min.js"></script>
-		<script src="/static/javascript/bootstrap.min.js"></script>
-	</body>
-
-</html>
+{% endblock %}

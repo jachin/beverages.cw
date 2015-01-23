@@ -198,71 +198,113 @@ def index():
     return render_template('index.html')
 
 
-    @app.route('/update_db')
-    @app.route('/update_db/')
-    def update_database():
+@app.route('/update_db')
+@app.route('/update_db/')
+def update_database():
 
-        update_groups_and_consumable()
-        bad_upcs = get_bad_upcs()
+    update_groups_and_consumable()
+    bad_upcs = get_bad_upcs()
 
-        last_consumed = Consumed.query.order_by(desc(Consumed.scann_id)).first()
+    last_consumed = Consumed.query.order_by(desc(Consumed.scann_id)).first()
 
-        if last_consumed is None:
-            req = urllib2.Request(
-                ip_address
+    if last_consumed is None:
+        req = urllib2.Request(
+            ip_address
+        )
+    else:
+        req = urllib2.Request(
+            "{0}after/{1}".format(ip_address, last_consumed.scann_id)
+        )
+
+    opener = urllib2.build_opener()
+    f = opener.open(req)
+    scans = simplejson.load(f)
+
+    stats = {
+        'number_of_scans': 0,
+        'number_of_new_consumables': 0,
+        'number_of_new_consumed': 0,
+    }
+
+    for scan in scans:
+        stats['number_of_scans'] += 1
+
+        if scan['upc'] in bad_upcs:
+            # skip any bad upcs
+            continue
+
+        # Look for a consumable with a matching UPC
+        query = Consumable.query.filter_by(upc=scan['upc'])
+
+        if query.count() == 0:
+            # If we are unable to find one, make a new one with an empty name.
+            consumable = Consumable(scan['upc'], name='', beverage_group_id=None)
+            db.session.add(consumable)
+            db.session.commit()
+            stats['number_of_new_consumables'] += 1
+
+        consumable = query.first()
+
+        if Consumed.query.filter_by(scann_id=scan['id']).count() == 0:
+            timestamp = datetime.strptime(
+                scan['timestamp'],
+                '%Y-%m-%dT%H:%M:%S'
             )
+
+            timestamp = timestamp.replace(tzinfo=pytz.utc)
+
+            consumed = Consumed(
+                scann_id=scan['id'],
+                datetime=timestamp,
+                consumable=consumable.id
+            )
+            db.session.add(consumed)
+            db.session.commit()
+            stats['number_of_new_consumed'] += 1
+
+    return render_template('update_database.html', **stats)
+
+
+@app.route('/ping')
+@app.route('/ping/')
+def ping():
+
+    from pyga.requests import Tracker, Event, Session, Visitor
+
+    upc = request.args.get('upc')
+
+    query = Consumable.query.filter_by(upc=upc)
+
+    consumable = query.first()
+
+    if consumable is not None:
+        consumable_name = consumable.name
+        group = BeverageGroup.query.filter_by(id=consumable.beverage_group_id).first()
+        if group:
+            group_name = group.name
         else:
-            req = urllib2.Request(
-                "{0}after/{1}".format(ip_address, last_consumed.scann_id)
-            )
+            group_name = 'Unknown'
+    else:
+        consumable_name = upc
+        group_name = 'Unknown'
 
-        opener = urllib2.build_opener()
-        f = opener.open(req)
-        scans = simplejson.load(f)
+    tracker = Tracker('UA-5298189-10', 'beverages.cw')
 
-        stats = {
-            'number_of_scans': 0,
-            'number_of_new_consumables': 0,
-            'number_of_new_consumed': 0,
-        }
+    event_label = "{0}: {1}".format(group_name, consumable_name)
 
-        for scan in scans:
-            stats['number_of_scans'] += 1
+    event = Event('Beverage Fridge', 'Drink', event_label, 1)
 
-            if scan['upc'] in bad_upcs:
-                # skip any bad upcs
-                continue
+    session = Session()
+    visitor = Visitor()
 
-            # Look for a consumable with a matching UPC
-            query = Consumable.query.filter_by(upc=scan['upc'])
+    tracker.track_event(event, session, visitor)
 
-            if query.count() == 0:
-                # If we are unable to find one, make a new one with an empty name.
-                consumable = Consumable(scan['upc'], name='', beverage_group_id=None)
-                db.session.add(consumable)
-                db.session.commit()
-                stats['number_of_new_consumables'] += 1
-
-            consumable = query.first()
-
-            if Consumed.query.filter_by(scann_id=scan['id']).count() == 0:
-                timestamp = datetime.strptime(
-                    scan['timestamp'],
-                    '%Y-%m-%dT%H:%M:%S'
-                )
-
-                timestamp = timestamp.replace(tzinfo=pytz.utc)
-
-                consumed = Consumed(
-                    scann_id=scan['id'],
-                    datetime=timestamp,
-                    consumable=consumable.id
-                )
-                db.session.add(consumed)
-                db.session.commit()
-                stats['number_of_new_consumed'] += 1
-
-        return render_template('update_database.html', **stats)
+    return render_template(
+        'ping.html',
+        upc=upc,
+        name=consumable_name,
+        group=group_name
+    )
 
 
 @app.route('/days/<day_string>')
@@ -303,6 +345,10 @@ def scans():
 @app.route('/scans/all')
 @app.route('/scans/all/')
 def show_all():
+
+    if not request.is_xhr and not request.args.get('json', False):
+        return render_template('blank.html')
+
     json_data = []
     for consumed in Consumed.query.all():
         json_data.append(consumed.serialize())
@@ -465,48 +511,6 @@ def show_drinks_by_day():
 def show_drinks_by_beverage():
     if not request.is_xhr and not request.args.get('json', False):
         return render_template('blank.html')
-
-
-@app.route('/ping')
-@app.route('/ping/')
-def ping():
-
-    from pyga.requests import Tracker, Event, Session, Visitor
-
-    upc = request.args.get('upc')
-
-    query = Consumable.query.filter_by(upc=upc)
-
-    consumable = query.first()
-
-    if consumable is not None:
-        consumable_name = consumable.name
-        group = BeverageGroup.query.filter_by(id=consumable.beverage_group_id).first()
-        if group:
-            group_name = group.name
-        else:
-            group_name = 'Unknown'
-    else:
-        consumable_name = upc
-        group_name = 'Unknown'
-
-    tracker = Tracker('UA-5298189-10', 'beverages.cw')
-
-    event_label = "{0}: {1}".format(group_name, consumable_name)
-
-    event = Event('Beverage Fridge', 'Drink', event_label, 1)
-
-    session = Session()
-    visitor = Visitor()
-
-    tracker.track_event(event, session, visitor)
-
-    return render_template(
-        'ping.html',
-        upc=upc,
-        name=consumable_name,
-        group=group_name
-    )
 
 
 @app.route('/graph/beverages/by/time')
