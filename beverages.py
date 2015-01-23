@@ -26,7 +26,7 @@ app.config.from_pyfile('../beverages.cfg', silent=False)
 db = SQLAlchemy(app)
 
 central_tz = pytz.timezone('US/Central')
-pi_address = 'http://192.168.22.21/'
+ip_address = 'http://192.168.22.15/'
 
 
 class BeverageGroup(db.Model):
@@ -316,11 +316,11 @@ def update_database():
 
     if last_consumed is None:
         req = urllib2.Request(
-            pi_address
+            ip_address
         )
     else:
         req = urllib2.Request(
-            "{0}after/{1}".format(pi_address, last_consumed.scann_id)
+            "{0}after/{1}".format(ip_address, last_consumed.scann_id)
         )
 
     opener = urllib2.build_opener()
@@ -632,6 +632,41 @@ def graph_beverages_by_time():
     }
 
     return render_template('graph_beverages_by_time.html', **data)
+
+
+@app.route('/year/summary')
+def year_summary():
+    query = db.session.query(Consumed)
+    query.order_by(Consumed.datetime)
+
+    drinks_by_years = {}
+
+    for consumed in query.all():
+        datetime_gmt = consumed.datetime.replace(tzinfo=pytz.utc)
+        datetime_cst = datetime_gmt.astimezone(central_tz)
+
+        year = datetime_cst.strftime("%Y")
+
+        year = int(year);
+
+        if year not in drinks_by_years:
+            drinks_by_years[year] = {
+                'year': year,
+                'number': 0,
+                'drinks': {},
+            }
+
+        drinks_by_years[year]['number'] += 1
+
+
+    drinks_by_years = ordereddict.OrderedDict(sorted(drinks_by_years.items()))
+
+    data = {
+        'drinks_by_years': drinks_by_years.values()
+    }
+
+    return render_template('year_summary.html', **data)
+
 
 class BeverageGroupModelView(ModelView):
     inline_models = [(Consumable, dict(form_columns=['name']))]
