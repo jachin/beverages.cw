@@ -26,7 +26,20 @@ app.config.from_pyfile('../beverages.cfg', silent=False)
 db = SQLAlchemy(app)
 
 central_tz = pytz.timezone('US/Central')
-ip_address = 'http://192.168.22.15/'
+ip_address = 'http://192.168.22.211/'
+
+
+class ScannerLocation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    address = db.Column(db.String(50), unique=True)
+    name = db.Column(db.String(50), unique=True)
+
+    def __init__(self, address, name):
+        self.address = address
+        self.name = name
+
+    def __repr__(self):
+        return "<ScannerLocation {0}>".format(self.name)
 
 
 class BeverageGroup(db.Model):
@@ -44,42 +57,64 @@ class BeverageGroup(db.Model):
 
 class Consumable(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    upc = db.Column(db.String(50), unique=True)
     name = db.Column(db.String(120), unique=False)
-    consumed = db.relationship(
-        'Consumed',
-        backref='details',
-        lazy='dynamic'
-    )
     beverage_group_id = db.Column(
         db.Integer,
         db.ForeignKey('beverage_group.id')
     )
+    barcodes = db.relationship(
+        'Barcode',
+        backref='barcodes',
+        lazy='dynamic'
+    )
 
-    def __init__(self, upc, name=None, beverage_group_id=beverage_group_id):
-        self.upc = upc
+    def __init__(self, name=None, beverage_group_id=beverage_group_id):
         self.name = name
         self.beverage_group_id = beverage_group_id
 
     def serialize(self):
         return {
             'id': self.id,
-            'upc': self.upc,
+            'upc': self.barcodes,
             'name': self.name,
         }
 
     def __repr__(self):
         return "%s" % self.name
 
+    @staticmethod
+    def get_or_create_by_barcode(upc):
+        query = Barcode.query.filter_by(upc=upc)
+        if query.count() == 0:
+
+            consumable = Consumable(name='', beverage_group_id=None)
+            db.session.add(consumable)
+            db.session.commit()
+
+            barcode = Barcode(
+                upc=upc,
+                consumable_id=consumable.id,
+            )
+            db.session.add(barcode)
+            db.session.commit()
+        barcode = Barcode.query.filter_by(upc=upc).first()
+        return Consumable.query.get(barcode.consumable_id)
+
 
 class Consumed(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    scann_id = db.Column(db.Integer, unique=True, index=True)
+    uuid = db.Column(db.String(50), unique=True, index=True)
     datetime = db.Column(db.DateTime())
-    consumable = db.Column(
-        'consumable_id',
+    location = db.Column(
+        'scanner_location_id',
         db.Integer,
-        db.ForeignKey("consumable.id"),
+        db.ForeignKey("scanner_location.id"),
+        nullable=False
+    )
+    barcode = db.Column(
+        'barcode_id',
+        db.Integer,
+        db.ForeignKey("barcode.id"),
         nullable=False
     )
 
@@ -91,7 +126,7 @@ class Consumed(db.Model):
 
         return {
             'id': self.id,
-            'scann_id': self.scann_id,
+            'uuid': self.uuid,
             'datetime': scan_datetime.strftime("%Y-%m-%d %H:%M:%S %Z%z"),
             'datetime_gmt_human': scan_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'datetime_cst': scan_datetime_cst.strftime("%Y-%m-%d %H:%M:%S %Z%z"),
@@ -103,6 +138,35 @@ class Consumed(db.Model):
 
     def __repr__(self):
         return '<Consumed %r>' % (self.id)
+
+
+class Barcode(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    consumable_id = db.Column(
+        db.Integer,
+        db.ForeignKey("consumable.id"),
+        nullable=False
+    )
+    upc = db.Column(db.String(50), unique=True)
+
+    def __init__(self, consumable_id=consumable_id, upc=upc):
+        self.consumable_id = consumable_id
+        self.upc = upc
+
+
+def update_locations():
+    stream = open("locations.yaml", 'r')
+    location_data = yaml.load(stream)
+
+    for (title, location_data) in location_data.items():
+        name = location_data['Name']
+        address = location_data['Address']
+        if ScannerLocation.query.filter_by(name=name).count() == 0:
+            location = ScannerLocation(name=name, address=address)
+            db.session.add(location)
+            db.session.commit()
+        #TODO Update and Delete Locations
+        location = ScannerLocation.query.filter_by(name=name).first()
 
 
 def update_groups_and_consumable():
@@ -118,22 +182,32 @@ def update_groups_and_consumable():
             app.logger.debug("Adding beverage group: {0}".format(group_name))
         group = BeverageGroup.query.filter_by(name=group_name).first()
         for (beverage_name, upc) in beverages.items():
-            query = Consumable.query.filter_by(upc=upc)
-            if query.count() == 0:
+
+            if Consumable.query.filter_by(name=beverage_name).count() == 0:
                 consumable = Consumable(
-                    upc=upc,
                     name=beverage_name,
                     beverage_group_id=group.id
                 )
                 db.session.add(consumable)
                 db.session.commit()
+                app.logger.debug("Adding consumable: {0}".format(beverage_name))
+
+            consumable = Consumable.query.filter_by(name=beverage_name).first()
+
+            if Barcode.query.filter_by(upc=upc).count() == 0:
+                barcode = Barcode(
+                    upc=upc,
+                    consumable_id=consumable.id,
+                )
+                db.session.add(barcode)
+                db.session.commit()
                 app.logger.debug(
-                    "Adding a new consumable '{0}' to the beverage group '{1}'".format(
-                        beverage_name,
-                        group.name
+                    "Adding a new bar code '{0}' to the consumable '{1}'".format(
+                        upc,
+                        beverage_name
                     )
                 )
-            consumable = query.first()
+
             if consumable.beverage_group_id != group.id:
                 consumable.beverage_group_id = group.id
                 db.session.commit()
@@ -152,6 +226,66 @@ def update_groups_and_consumable():
                         beverage_name
                     )
                 )
+
+
+def update_bom(location):
+    bad_upcs = get_bad_upcs()
+
+    last_consumed = Consumed.query.filter_by(
+        location=location.id
+    ).order_by(
+        desc(Consumed.datetime)
+    ).first()
+
+    url = "http://{0}".format(location.address)
+
+    if last_consumed is None:
+        req = urllib2.Request(url)
+    else:
+        req = urllib2.Request("{0}/after/{1}".format(url, last_consumed.uuid))
+
+    opener = urllib2.build_opener()
+    f = opener.open(req)
+    scans = simplejson.load(f)
+
+    stats = {
+        'number_of_scans': 0,
+        'number_of_new_consumables': 0,
+        'number_of_new_consumed': 0,
+    }
+
+    for scan in scans:
+        stats['number_of_scans'] += 1
+
+        if scan['upc'] in bad_upcs:
+            # skip any bad upcs
+            continue
+
+        consumable = Consumable.get_or_create_by_barcode(scan['upc'])
+        barcode = Barcode.query.filter_by(upc=scan['upc']).first()
+
+        if consumable.name == '':
+            stats['number_of_new_consumables'] += 1
+
+        if Consumed.query.filter_by(uuid=scan['uuid']).count() == 0:
+            timestamp = datetime.strptime(
+                scan['timestamp'],
+                '%Y-%m-%dT%H:%M:%S'
+            )
+
+            timestamp = timestamp.replace(tzinfo=pytz.utc)
+
+            consumed = Consumed(
+                uuid=scan['uuid'],
+                datetime=timestamp,
+                barcode=barcode.id,
+                location=location.id
+            )
+            db.session.add(consumed)
+            db.session.commit()
+            stats['number_of_new_consumed'] += 1
+
+    return stats
 
 
 def get_bad_upcs():
@@ -202,65 +336,11 @@ def index():
 @app.route('/update_db/')
 def update_database():
 
+    update_locations()
     update_groups_and_consumable()
-    bad_upcs = get_bad_upcs()
 
-    last_consumed = Consumed.query.order_by(desc(Consumed.scann_id)).first()
-
-    if last_consumed is None:
-        req = urllib2.Request(
-            ip_address
-        )
-    else:
-        req = urllib2.Request(
-            "{0}after/{1}".format(ip_address, last_consumed.scann_id)
-        )
-
-    opener = urllib2.build_opener()
-    f = opener.open(req)
-    scans = simplejson.load(f)
-
-    stats = {
-        'number_of_scans': 0,
-        'number_of_new_consumables': 0,
-        'number_of_new_consumed': 0,
-    }
-
-    for scan in scans:
-        stats['number_of_scans'] += 1
-
-        if scan['upc'] in bad_upcs:
-            # skip any bad upcs
-            continue
-
-        # Look for a consumable with a matching UPC
-        query = Consumable.query.filter_by(upc=scan['upc'])
-
-        if query.count() == 0:
-            # If we are unable to find one, make a new one with an empty name.
-            consumable = Consumable(scan['upc'], name='', beverage_group_id=None)
-            db.session.add(consumable)
-            db.session.commit()
-            stats['number_of_new_consumables'] += 1
-
-        consumable = query.first()
-
-        if Consumed.query.filter_by(scann_id=scan['id']).count() == 0:
-            timestamp = datetime.strptime(
-                scan['timestamp'],
-                '%Y-%m-%dT%H:%M:%S'
-            )
-
-            timestamp = timestamp.replace(tzinfo=pytz.utc)
-
-            consumed = Consumed(
-                scann_id=scan['id'],
-                datetime=timestamp,
-                consumable=consumable.id
-            )
-            db.session.add(consumed)
-            db.session.commit()
-            stats['number_of_new_consumed'] += 1
+    for location in ScannerLocation.query.all():
+        stats = update_bom(location)
 
     return render_template('update_database.html', **stats)
 
@@ -593,10 +673,17 @@ class BeverageGroupModelView(ModelView):
     def __init__(self, session):
         super(BeverageGroupModelView, self).__init__(BeverageGroup, session)
 
+class ConsumableGroupModelView(ModelView):
+
+    def __init__(self, session):
+        super(ConsumableGroupModelView, self).__init__(Consumable, session)
+
+
 admin = Admin(app, name='Beverage-O-Meter Admin')
-admin.add_view(ModelView(Consumable, db.session))
+admin.add_view(ConsumableGroupModelView(db.session))
 admin.add_view(ModelView(Consumed, db.session))
 admin.add_view(BeverageGroupModelView(db.session))
+
 
 if __name__ == '__main__':
     db.create_all()
