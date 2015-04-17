@@ -2,11 +2,7 @@
 
 import pytz
 
-from flask.ext.sqlalchemy import SQLAlchemy
-
-from beverages import app, central_tz
-
-db = SQLAlchemy(app)
+from beverages import tz, db
 
 class ScannerLocation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -101,7 +97,7 @@ class Consumed(db.Model):
 
         scan_datetime = self.datetime.replace(tzinfo=pytz.utc)
 
-        scan_datetime_cst = scan_datetime.astimezone(central_tz)
+        scan_datetime_cst = scan_datetime.astimezone(tz)
 
         return {
             'id': self.id,

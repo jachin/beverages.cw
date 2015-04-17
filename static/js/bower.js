@@ -1,5 +1,5 @@
 /*!
- * jQuery JavaScript Library v2.1.1
+ * jQuery JavaScript Library v2.1.3
  * http://jquery.com/
  *
  * Includes Sizzle.js
@@ -9,19 +9,19 @@
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2014-05-01T17:11Z
+ * Date: 2014-12-18T15:11Z
  */
 
 (function( global, factory ) {
 
 	if ( typeof module === "object" && typeof module.exports === "object" ) {
-		// For CommonJS and CommonJS-like environments where a proper window is present,
-		// execute the factory and get jQuery
-		// For environments that do not inherently posses a window with a document
-		// (such as Node.js), expose a jQuery-making factory as module.exports
-		// This accentuates the need for the creation of a real window
+		// For CommonJS and CommonJS-like environments where a proper `window`
+		// is present, execute the factory and get jQuery.
+		// For environments that do not have a `window` with a `document`
+		// (such as Node.js), expose a factory as module.exports.
+		// This accentuates the need for the creation of a real `window`.
 		// e.g. var jQuery = require("jquery")(window);
-		// See ticket #14549 for more info
+		// See ticket #14549 for more info.
 		module.exports = global.document ?
 			factory( global, true ) :
 			function( w ) {
@@ -37,10 +37,10 @@
 // Pass this if window is not defined yet
 }(typeof window !== "undefined" ? window : this, function( window, noGlobal ) {
 
-// Can't do this because several apps including ASP.NET trace
+// Support: Firefox 18+
+// Can't be in strict mode, several libs including ASP.NET trace
 // the stack via arguments.caller.callee and Firefox dies if
 // you try to trace through "use strict" call chains. (#13335)
-// Support: Firefox 18+
 //
 
 var arr = [];
@@ -67,7 +67,7 @@ var
 	// Use the correct document accordingly with window argument (sandbox)
 	document = window.document,
 
-	version = "2.1.1",
+	version = "2.1.3",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -185,7 +185,7 @@ jQuery.extend = jQuery.fn.extend = function() {
 	if ( typeof target === "boolean" ) {
 		deep = target;
 
-		// skip the boolean and the target
+		// Skip the boolean and the target
 		target = arguments[ i ] || {};
 		i++;
 	}
@@ -195,7 +195,7 @@ jQuery.extend = jQuery.fn.extend = function() {
 		target = {};
 	}
 
-	// extend jQuery itself if only one argument is passed
+	// Extend jQuery itself if only one argument is passed
 	if ( i === length ) {
 		target = this;
 		i--;
@@ -252,9 +252,6 @@ jQuery.extend({
 
 	noop: function() {},
 
-	// See test/unit/core.js for details concerning isFunction.
-	// Since version 1.3, DOM methods and functions like alert
-	// aren't supported. They return false on IE (#2968).
 	isFunction: function( obj ) {
 		return jQuery.type(obj) === "function";
 	},
@@ -269,7 +266,8 @@ jQuery.extend({
 		// parseFloat NaNs numeric-cast false positives (null|true|false|"")
 		// ...but misinterprets leading-number strings, particularly hex literals ("0x...")
 		// subtraction forces infinities to NaN
-		return !jQuery.isArray( obj ) && obj - parseFloat( obj ) >= 0;
+		// adding 1 corrects loss of precision from parseFloat (#15100)
+		return !jQuery.isArray( obj ) && (obj - parseFloat( obj ) + 1) >= 0;
 	},
 
 	isPlainObject: function( obj ) {
@@ -303,7 +301,7 @@ jQuery.extend({
 		if ( obj == null ) {
 			return obj + "";
 		}
-		// Support: Android < 4.0, iOS < 6 (functionish RegExp)
+		// Support: Android<4.0, iOS<6 (functionish RegExp)
 		return typeof obj === "object" || typeof obj === "function" ?
 			class2type[ toString.call(obj) ] || "object" :
 			typeof obj;
@@ -333,6 +331,7 @@ jQuery.extend({
 	},
 
 	// Convert dashed to camelCase; used by the css and data modules
+	// Support: IE9-11+
 	// Microsoft forgot to hump their vendor prefix (#9572)
 	camelCase: function( string ) {
 		return string.replace( rmsPrefix, "ms-" ).replace( rdashAlpha, fcamelCase );
@@ -548,14 +547,14 @@ function isArraylike( obj ) {
 }
 var Sizzle =
 /*!
- * Sizzle CSS Selector Engine v1.10.19
+ * Sizzle CSS Selector Engine v2.2.0-pre
  * http://sizzlejs.com/
  *
- * Copyright 2013 jQuery Foundation, Inc. and other contributors
+ * Copyright 2008, 2014 jQuery Foundation, Inc. and other contributors
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2014-04-18
+ * Date: 2014-12-16
  */
 (function( window ) {
 
@@ -582,7 +581,7 @@ var i,
 	contains,
 
 	// Instance-specific data
-	expando = "sizzle" + -(new Date()),
+	expando = "sizzle" + 1 * new Date(),
 	preferredDoc = window.document,
 	dirruns = 0,
 	done = 0,
@@ -597,7 +596,6 @@ var i,
 	},
 
 	// General-purpose constants
-	strundefined = typeof undefined,
 	MAX_NEGATIVE = 1 << 31,
 
 	// Instance methods
@@ -607,12 +605,13 @@ var i,
 	push_native = arr.push,
 	push = arr.push,
 	slice = arr.slice,
-	// Use a stripped-down indexOf if we can't use a native one
-	indexOf = arr.indexOf || function( elem ) {
+	// Use a stripped-down indexOf as it's faster than native
+	// http://jsperf.com/thor-indexof-vs-for/5
+	indexOf = function( list, elem ) {
 		var i = 0,
-			len = this.length;
+			len = list.length;
 		for ( ; i < len; i++ ) {
-			if ( this[i] === elem ) {
+			if ( list[i] === elem ) {
 				return i;
 			}
 		}
@@ -652,6 +651,7 @@ var i,
 		")\\)|)",
 
 	// Leading and non-escaped trailing whitespace, capturing some non-whitespace characters preceding the latter
+	rwhitespace = new RegExp( whitespace + "+", "g" ),
 	rtrim = new RegExp( "^" + whitespace + "+|((?:^|[^\\\\])(?:\\\\.)*)" + whitespace + "+$", "g" ),
 
 	rcomma = new RegExp( "^" + whitespace + "*," + whitespace + "*" ),
@@ -703,6 +703,14 @@ var i,
 				String.fromCharCode( high + 0x10000 ) :
 				// Supplemental Plane codepoint (surrogate pair)
 				String.fromCharCode( high >> 10 | 0xD800, high & 0x3FF | 0xDC00 );
+	},
+
+	// Used for iframes
+	// See setDocument()
+	// Removing the function wrapper causes a "Permission Denied"
+	// error in IE
+	unloadHandler = function() {
+		setDocument();
 	};
 
 // Optimize for push.apply( _, NodeList )
@@ -745,19 +753,18 @@ function Sizzle( selector, context, results, seed ) {
 
 	context = context || document;
 	results = results || [];
+	nodeType = context.nodeType;
 
-	if ( !selector || typeof selector !== "string" ) {
+	if ( typeof selector !== "string" || !selector ||
+		nodeType !== 1 && nodeType !== 9 && nodeType !== 11 ) {
+
 		return results;
 	}
 
-	if ( (nodeType = context.nodeType) !== 1 && nodeType !== 9 ) {
-		return [];
-	}
+	if ( !seed && documentIsHTML ) {
 
-	if ( documentIsHTML && !seed ) {
-
-		// Shortcuts
-		if ( (match = rquickExpr.exec( selector )) ) {
+		// Try to shortcut find operations when possible (e.g., not under DocumentFragment)
+		if ( nodeType !== 11 && (match = rquickExpr.exec( selector )) ) {
 			// Speed-up: Sizzle("#ID")
 			if ( (m = match[1]) ) {
 				if ( nodeType === 9 ) {
@@ -789,7 +796,7 @@ function Sizzle( selector, context, results, seed ) {
 				return results;
 
 			// Speed-up: Sizzle(".CLASS")
-			} else if ( (m = match[3]) && support.getElementsByClassName && context.getElementsByClassName ) {
+			} else if ( (m = match[3]) && support.getElementsByClassName ) {
 				push.apply( results, context.getElementsByClassName( m ) );
 				return results;
 			}
@@ -799,7 +806,7 @@ function Sizzle( selector, context, results, seed ) {
 		if ( support.qsa && (!rbuggyQSA || !rbuggyQSA.test( selector )) ) {
 			nid = old = expando;
 			newContext = context;
-			newSelector = nodeType === 9 && selector;
+			newSelector = nodeType !== 1 && selector;
 
 			// qSA works strangely on Element-rooted queries
 			// We can work around this by specifying an extra ID on the root
@@ -986,7 +993,7 @@ function createPositionalPseudo( fn ) {
  * @returns {Element|Object|Boolean} The input node if acceptable, otherwise a falsy value
  */
 function testContext( context ) {
-	return context && typeof context.getElementsByTagName !== strundefined && context;
+	return context && typeof context.getElementsByTagName !== "undefined" && context;
 }
 
 // Expose support vars for convenience
@@ -1010,9 +1017,8 @@ isXML = Sizzle.isXML = function( elem ) {
  * @returns {Object} Returns the current document
  */
 setDocument = Sizzle.setDocument = function( node ) {
-	var hasCompare,
-		doc = node ? node.ownerDocument || node : preferredDoc,
-		parent = doc.defaultView;
+	var hasCompare, parent,
+		doc = node ? node.ownerDocument || node : preferredDoc;
 
 	// If no document and documentElement is available, return
 	if ( doc === document || doc.nodeType !== 9 || !doc.documentElement ) {
@@ -1022,9 +1028,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 	// Set our document
 	document = doc;
 	docElem = doc.documentElement;
-
-	// Support tests
-	documentIsHTML = !isXML( doc );
+	parent = doc.defaultView;
 
 	// Support: IE>8
 	// If iframe document is assigned to "document" variable and if iframe has been reloaded,
@@ -1033,21 +1037,22 @@ setDocument = Sizzle.setDocument = function( node ) {
 	if ( parent && parent !== parent.top ) {
 		// IE11 does not have attachEvent, so all must suffer
 		if ( parent.addEventListener ) {
-			parent.addEventListener( "unload", function() {
-				setDocument();
-			}, false );
+			parent.addEventListener( "unload", unloadHandler, false );
 		} else if ( parent.attachEvent ) {
-			parent.attachEvent( "onunload", function() {
-				setDocument();
-			});
+			parent.attachEvent( "onunload", unloadHandler );
 		}
 	}
+
+	/* Support tests
+	---------------------------------------------------------------------- */
+	documentIsHTML = !isXML( doc );
 
 	/* Attributes
 	---------------------------------------------------------------------- */
 
 	// Support: IE<8
-	// Verify that getAttribute really returns attributes and not properties (excepting IE8 booleans)
+	// Verify that getAttribute really returns attributes and not properties
+	// (excepting IE8 booleans)
 	support.attributes = assert(function( div ) {
 		div.className = "i";
 		return !div.getAttribute("className");
@@ -1062,17 +1067,8 @@ setDocument = Sizzle.setDocument = function( node ) {
 		return !div.getElementsByTagName("*").length;
 	});
 
-	// Check if getElementsByClassName can be trusted
-	support.getElementsByClassName = rnative.test( doc.getElementsByClassName ) && assert(function( div ) {
-		div.innerHTML = "<div class='a'></div><div class='a i'></div>";
-
-		// Support: Safari<4
-		// Catch class over-caching
-		div.firstChild.className = "i";
-		// Support: Opera<10
-		// Catch gEBCN failure to find non-leading classes
-		return div.getElementsByClassName("i").length === 2;
-	});
+	// Support: IE<9
+	support.getElementsByClassName = rnative.test( doc.getElementsByClassName );
 
 	// Support: IE<10
 	// Check if getElementById returns elements by name
@@ -1086,7 +1082,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 	// ID find and filter
 	if ( support.getById ) {
 		Expr.find["ID"] = function( id, context ) {
-			if ( typeof context.getElementById !== strundefined && documentIsHTML ) {
+			if ( typeof context.getElementById !== "undefined" && documentIsHTML ) {
 				var m = context.getElementById( id );
 				// Check parentNode to catch when Blackberry 4.6 returns
 				// nodes that are no longer in the document #6963
@@ -1107,7 +1103,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 		Expr.filter["ID"] =  function( id ) {
 			var attrId = id.replace( runescape, funescape );
 			return function( elem ) {
-				var node = typeof elem.getAttributeNode !== strundefined && elem.getAttributeNode("id");
+				var node = typeof elem.getAttributeNode !== "undefined" && elem.getAttributeNode("id");
 				return node && node.value === attrId;
 			};
 		};
@@ -1116,14 +1112,20 @@ setDocument = Sizzle.setDocument = function( node ) {
 	// Tag
 	Expr.find["TAG"] = support.getElementsByTagName ?
 		function( tag, context ) {
-			if ( typeof context.getElementsByTagName !== strundefined ) {
+			if ( typeof context.getElementsByTagName !== "undefined" ) {
 				return context.getElementsByTagName( tag );
+
+			// DocumentFragment nodes don't have gEBTN
+			} else if ( support.qsa ) {
+				return context.querySelectorAll( tag );
 			}
 		} :
+
 		function( tag, context ) {
 			var elem,
 				tmp = [],
 				i = 0,
+				// By happy coincidence, a (broken) gEBTN appears on DocumentFragment nodes too
 				results = context.getElementsByTagName( tag );
 
 			// Filter out possible comments
@@ -1141,7 +1143,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 
 	// Class
 	Expr.find["CLASS"] = support.getElementsByClassName && function( className, context ) {
-		if ( typeof context.getElementsByClassName !== strundefined && documentIsHTML ) {
+		if ( documentIsHTML ) {
 			return context.getElementsByClassName( className );
 		}
 	};
@@ -1170,13 +1172,15 @@ setDocument = Sizzle.setDocument = function( node ) {
 			// setting a boolean content attribute,
 			// since its presence should be enough
 			// http://bugs.jquery.com/ticket/12359
-			div.innerHTML = "<select msallowclip=''><option selected=''></option></select>";
+			docElem.appendChild( div ).innerHTML = "<a id='" + expando + "'></a>" +
+				"<select id='" + expando + "-\f]' msallowcapture=''>" +
+				"<option selected=''></option></select>";
 
 			// Support: IE8, Opera 11-12.16
 			// Nothing should be selected when empty strings follow ^= or $= or *=
 			// The test attribute must be unknown in Opera but "safe" for WinRT
 			// http://msdn.microsoft.com/en-us/library/ie/hh465388.aspx#attribute_section
-			if ( div.querySelectorAll("[msallowclip^='']").length ) {
+			if ( div.querySelectorAll("[msallowcapture^='']").length ) {
 				rbuggyQSA.push( "[*^$]=" + whitespace + "*(?:''|\"\")" );
 			}
 
@@ -1186,11 +1190,23 @@ setDocument = Sizzle.setDocument = function( node ) {
 				rbuggyQSA.push( "\\[" + whitespace + "*(?:value|" + booleans + ")" );
 			}
 
+			// Support: Chrome<29, Android<4.2+, Safari<7.0+, iOS<7.0+, PhantomJS<1.9.7+
+			if ( !div.querySelectorAll( "[id~=" + expando + "-]" ).length ) {
+				rbuggyQSA.push("~=");
+			}
+
 			// Webkit/Opera - :checked should return selected option elements
 			// http://www.w3.org/TR/2011/REC-css3-selectors-20110929/#checked
 			// IE8 throws error here and will not see later tests
 			if ( !div.querySelectorAll(":checked").length ) {
 				rbuggyQSA.push(":checked");
+			}
+
+			// Support: Safari 8+, iOS 8+
+			// https://bugs.webkit.org/show_bug.cgi?id=136851
+			// In-page `selector#id sibing-combinator selector` fails
+			if ( !div.querySelectorAll( "a#" + expando + "+*" ).length ) {
+				rbuggyQSA.push(".#.+[+~]");
 			}
 		});
 
@@ -1308,7 +1324,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 
 			// Maintain original order
 			return sortInput ?
-				( indexOf.call( sortInput, a ) - indexOf.call( sortInput, b ) ) :
+				( indexOf( sortInput, a ) - indexOf( sortInput, b ) ) :
 				0;
 		}
 
@@ -1335,7 +1351,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 				aup ? -1 :
 				bup ? 1 :
 				sortInput ?
-				( indexOf.call( sortInput, a ) - indexOf.call( sortInput, b ) ) :
+				( indexOf( sortInput, a ) - indexOf( sortInput, b ) ) :
 				0;
 
 		// If the nodes are siblings, we can do a quick check
@@ -1398,7 +1414,7 @@ Sizzle.matchesSelector = function( elem, expr ) {
 					elem.document && elem.document.nodeType !== 11 ) {
 				return ret;
 			}
-		} catch(e) {}
+		} catch (e) {}
 	}
 
 	return Sizzle( expr, document, null, [ elem ] ).length > 0;
@@ -1617,7 +1633,7 @@ Expr = Sizzle.selectors = {
 			return pattern ||
 				(pattern = new RegExp( "(^|" + whitespace + ")" + className + "(" + whitespace + "|$)" )) &&
 				classCache( className, function( elem ) {
-					return pattern.test( typeof elem.className === "string" && elem.className || typeof elem.getAttribute !== strundefined && elem.getAttribute("class") || "" );
+					return pattern.test( typeof elem.className === "string" && elem.className || typeof elem.getAttribute !== "undefined" && elem.getAttribute("class") || "" );
 				});
 		},
 
@@ -1639,7 +1655,7 @@ Expr = Sizzle.selectors = {
 					operator === "^=" ? check && result.indexOf( check ) === 0 :
 					operator === "*=" ? check && result.indexOf( check ) > -1 :
 					operator === "$=" ? check && result.slice( -check.length ) === check :
-					operator === "~=" ? ( " " + result + " " ).indexOf( check ) > -1 :
+					operator === "~=" ? ( " " + result.replace( rwhitespace, " " ) + " " ).indexOf( check ) > -1 :
 					operator === "|=" ? result === check || result.slice( 0, check.length + 1 ) === check + "-" :
 					false;
 			};
@@ -1759,7 +1775,7 @@ Expr = Sizzle.selectors = {
 							matched = fn( seed, argument ),
 							i = matched.length;
 						while ( i-- ) {
-							idx = indexOf.call( seed, matched[i] );
+							idx = indexOf( seed, matched[i] );
 							seed[ idx ] = !( matches[ idx ] = matched[i] );
 						}
 					}) :
@@ -1798,6 +1814,8 @@ Expr = Sizzle.selectors = {
 				function( elem, context, xml ) {
 					input[0] = elem;
 					matcher( input, null, xml, results );
+					// Don't keep the element (issue #299)
+					input[0] = null;
 					return !results.pop();
 				};
 		}),
@@ -1809,6 +1827,7 @@ Expr = Sizzle.selectors = {
 		}),
 
 		"contains": markFunction(function( text ) {
+			text = text.replace( runescape, funescape );
 			return function( elem ) {
 				return ( elem.textContent || elem.innerText || getText( elem ) ).indexOf( text ) > -1;
 			};
@@ -2230,7 +2249,7 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 				i = matcherOut.length;
 				while ( i-- ) {
 					if ( (elem = matcherOut[i]) &&
-						(temp = postFinder ? indexOf.call( seed, elem ) : preMap[i]) > -1 ) {
+						(temp = postFinder ? indexOf( seed, elem ) : preMap[i]) > -1 ) {
 
 						seed[temp] = !(results[temp] = elem);
 					}
@@ -2265,13 +2284,16 @@ function matcherFromTokens( tokens ) {
 			return elem === checkContext;
 		}, implicitRelative, true ),
 		matchAnyContext = addCombinator( function( elem ) {
-			return indexOf.call( checkContext, elem ) > -1;
+			return indexOf( checkContext, elem ) > -1;
 		}, implicitRelative, true ),
 		matchers = [ function( elem, context, xml ) {
-			return ( !leadingRelative && ( xml || context !== outermostContext ) ) || (
+			var ret = ( !leadingRelative && ( xml || context !== outermostContext ) ) || (
 				(checkContext = context).nodeType ?
 					matchContext( elem, context, xml ) :
 					matchAnyContext( elem, context, xml ) );
+			// Avoid hanging onto element (issue #299)
+			checkContext = null;
+			return ret;
 		} ];
 
 	for ( ; i < len; i++ ) {
@@ -2521,7 +2543,7 @@ select = Sizzle.select = function( selector, context, results, seed ) {
 // Sort stability
 support.sortStable = expando.split("").sort( sortOrder ).join("") === expando;
 
-// Support: Chrome<14
+// Support: Chrome 14-35+
 // Always assume duplicates if they aren't passed to the comparison function
 support.detectDuplicates = !!hasDuplicate;
 
@@ -2730,7 +2752,7 @@ var rootjQuery,
 				if ( match[1] ) {
 					context = context instanceof jQuery ? context[0] : context;
 
-					// scripts is true for back-compat
+					// Option to run scripts is true for back-compat
 					// Intentionally let the error be thrown if parseHTML is not present
 					jQuery.merge( this, jQuery.parseHTML(
 						match[1],
@@ -2758,8 +2780,8 @@ var rootjQuery,
 				} else {
 					elem = document.getElementById( match[2] );
 
-					// Check parentNode to catch when Blackberry 4.6 returns
-					// nodes that are no longer in the document #6963
+					// Support: Blackberry 4.6
+					// gEBID returns nodes no longer in the document (#6963)
 					if ( elem && elem.parentNode ) {
 						// Inject the element directly into the jQuery object
 						this.length = 1;
@@ -2812,7 +2834,7 @@ rootjQuery = jQuery( document );
 
 
 var rparentsprev = /^(?:parents|prev(?:Until|All))/,
-	// methods guaranteed to produce a unique set when starting from a unique set
+	// Methods guaranteed to produce a unique set when starting from a unique set
 	guaranteedUnique = {
 		children: true,
 		contents: true,
@@ -2892,8 +2914,7 @@ jQuery.fn.extend({
 		return this.pushStack( matched.length > 1 ? jQuery.unique( matched ) : matched );
 	},
 
-	// Determine the position of an element within
-	// the matched set of elements
+	// Determine the position of an element within the set
 	index: function( elem ) {
 
 		// No argument, return index in parent
@@ -2901,7 +2922,7 @@ jQuery.fn.extend({
 			return ( this[ 0 ] && this[ 0 ].parentNode ) ? this.first().prevAll().length : -1;
 		}
 
-		// index in selector
+		// Index in selector
 		if ( typeof elem === "string" ) {
 			return indexOf.call( jQuery( elem ), this[ 0 ] );
 		}
@@ -3317,7 +3338,7 @@ jQuery.extend({
 
 			progressValues, progressContexts, resolveContexts;
 
-		// add listeners to Deferred subordinates; treat others as resolved
+		// Add listeners to Deferred subordinates; treat others as resolved
 		if ( length > 1 ) {
 			progressValues = new Array( length );
 			progressContexts = new Array( length );
@@ -3334,7 +3355,7 @@ jQuery.extend({
 			}
 		}
 
-		// if we're not waiting on anything, resolve the master
+		// If we're not waiting on anything, resolve the master
 		if ( !remaining ) {
 			deferred.resolveWith( resolveContexts, resolveValues );
 		}
@@ -3413,7 +3434,7 @@ jQuery.ready.promise = function( obj ) {
 		readyList = jQuery.Deferred();
 
 		// Catch cases where $(document).ready() is called after the browser event has already occurred.
-		// we once tried to use readyState "interactive" here, but it caused issues like the one
+		// We once tried to use readyState "interactive" here, but it caused issues like the one
 		// discovered by ChrisS here: http://bugs.jquery.com/ticket/12282#comment:15
 		if ( document.readyState === "complete" ) {
 			// Handle it asynchronously to allow scripts the opportunity to delay ready
@@ -3507,7 +3528,7 @@ jQuery.acceptData = function( owner ) {
 
 
 function Data() {
-	// Support: Android < 4,
+	// Support: Android<4,
 	// Old WebKit does not have Object.preventExtensions/freeze method,
 	// return new empty object instead with no [[set]] accessor
 	Object.defineProperty( this.cache = {}, 0, {
@@ -3516,7 +3537,7 @@ function Data() {
 		}
 	});
 
-	this.expando = jQuery.expando + Math.random();
+	this.expando = jQuery.expando + Data.uid++;
 }
 
 Data.uid = 1;
@@ -3544,7 +3565,7 @@ Data.prototype = {
 				descriptor[ this.expando ] = { value: unlock };
 				Object.defineProperties( owner, descriptor );
 
-			// Support: Android < 4
+			// Support: Android<4
 			// Fallback to a less secure definition
 			} catch ( e ) {
 				descriptor[ this.expando ] = unlock;
@@ -3684,17 +3705,16 @@ var data_user = new Data();
 
 
 
-/*
-	Implementation Summary
+//	Implementation Summary
+//
+//	1. Enforce API surface and semantic compatibility with 1.9.x branch
+//	2. Improve the module's maintainability by reducing the storage
+//		paths to a single mechanism.
+//	3. Use the same single mechanism to support "private" and "user" data.
+//	4. _Never_ expose "private" data to user code (TODO: Drop _data, _removeData)
+//	5. Avoid exposing implementation details on user objects (eg. expando properties)
+//	6. Provide a clear path for implementation upgrade to WeakMap in 2014
 
-	1. Enforce API surface and semantic compatibility with 1.9.x branch
-	2. Improve the module's maintainability by reducing the storage
-		paths to a single mechanism.
-	3. Use the same single mechanism to support "private" and "user" data.
-	4. _Never_ expose "private" data to user code (TODO: Drop _data, _removeData)
-	5. Avoid exposing implementation details on user objects (eg. expando properties)
-	6. Provide a clear path for implementation upgrade to WeakMap in 2014
-*/
 var rbrace = /^(?:\{[\w\W]*\}|\[[\w\W]*\])$/,
 	rmultiDash = /([A-Z])/g;
 
@@ -3899,7 +3919,7 @@ jQuery.extend({
 				queue.unshift( "inprogress" );
 			}
 
-			// clear up the last queue stop function
+			// Clear up the last queue stop function
 			delete hooks.stop;
 			fn.call( elem, next, hooks );
 		}
@@ -3909,7 +3929,7 @@ jQuery.extend({
 		}
 	},
 
-	// not intended for public consumption - generates a queueHooks object, or returns the current one
+	// Not public - generate a queueHooks object, or return the current one
 	_queueHooks: function( elem, type ) {
 		var key = type + "queueHooks";
 		return data_priv.get( elem, key ) || data_priv.access( elem, key, {
@@ -3939,7 +3959,7 @@ jQuery.fn.extend({
 			this.each(function() {
 				var queue = jQuery.queue( this, type, data );
 
-				// ensure a hooks for this queue
+				// Ensure a hooks for this queue
 				jQuery._queueHooks( this, type );
 
 				if ( type === "fx" && queue[0] !== "inprogress" ) {
@@ -4006,21 +4026,22 @@ var rcheckableType = (/^(?:checkbox|radio)$/i);
 		div = fragment.appendChild( document.createElement( "div" ) ),
 		input = document.createElement( "input" );
 
-	// #11217 - WebKit loses check when the name is after the checked attribute
+	// Support: Safari<=5.1
+	// Check state lost if the name is set (#11217)
 	// Support: Windows Web Apps (WWA)
-	// `name` and `type` need .setAttribute for WWA
+	// `name` and `type` must use .setAttribute for WWA (#14901)
 	input.setAttribute( "type", "radio" );
 	input.setAttribute( "checked", "checked" );
 	input.setAttribute( "name", "t" );
 
 	div.appendChild( input );
 
-	// Support: Safari 5.1, iOS 5.1, Android 4.x, Android 2.3
-	// old WebKit doesn't clone checked state correctly in fragments
+	// Support: Safari<=5.1, Android<4.2
+	// Older WebKit doesn't clone checked state correctly in fragments
 	support.checkClone = div.cloneNode( true ).cloneNode( true ).lastChild.checked;
 
+	// Support: IE<=11+
 	// Make sure textarea (and checkbox) defaultValue is properly cloned
-	// Support: IE9-IE11+
 	div.innerHTML = "<textarea>x</textarea>";
 	support.noCloneChecked = !!div.cloneNode( true ).lastChild.defaultValue;
 })();
@@ -4398,8 +4419,8 @@ jQuery.event = {
 			j = 0;
 			while ( (handleObj = matched.handlers[ j++ ]) && !event.isImmediatePropagationStopped() ) {
 
-				// Triggered event must either 1) have no namespace, or
-				// 2) have namespace(s) a subset or equal to those in the bound event (both can have no namespace).
+				// Triggered event must either 1) have no namespace, or 2) have namespace(s)
+				// a subset or equal to those in the bound event (both can have no namespace).
 				if ( !event.namespace_re || event.namespace_re.test( handleObj.namespace ) ) {
 
 					event.handleObj = handleObj;
@@ -4549,7 +4570,7 @@ jQuery.event = {
 			event.target = document;
 		}
 
-		// Support: Safari 6.0+, Chrome < 28
+		// Support: Safari 6.0+, Chrome<28
 		// Target should not be a text node (#504, #13143)
 		if ( event.target.nodeType === 3 ) {
 			event.target = event.target.parentNode;
@@ -4654,7 +4675,7 @@ jQuery.Event = function( src, props ) {
 		// by a handler lower down the tree; reflect the correct value.
 		this.isDefaultPrevented = src.defaultPrevented ||
 				src.defaultPrevented === undefined &&
-				// Support: Android < 4.0
+				// Support: Android<4.0
 				src.returnValue === false ?
 			returnTrue :
 			returnFalse;
@@ -4744,8 +4765,8 @@ jQuery.each({
 	};
 });
 
-// Create "bubbling" focus and blur events
 // Support: Firefox, Chrome, Safari
+// Create "bubbling" focus and blur events
 if ( !support.focusinBubbles ) {
 	jQuery.each({ focus: "focusin", blur: "focusout" }, function( orig, fix ) {
 
@@ -4898,7 +4919,7 @@ var
 	// We have to close these tags to support XHTML (#13200)
 	wrapMap = {
 
-		// Support: IE 9
+		// Support: IE9
 		option: [ 1, "<select multiple='multiple'>", "</select>" ],
 
 		thead: [ 1, "<table>", "</table>" ],
@@ -4909,7 +4930,7 @@ var
 		_default: [ 0, "", "" ]
 	};
 
-// Support: IE 9
+// Support: IE9
 wrapMap.optgroup = wrapMap.option;
 
 wrapMap.tbody = wrapMap.tfoot = wrapMap.colgroup = wrapMap.caption = wrapMap.thead;
@@ -4999,7 +5020,7 @@ function getAll( context, tag ) {
 		ret;
 }
 
-// Support: IE >= 9
+// Fix IE bugs, see support tests
 function fixInput( src, dest ) {
 	var nodeName = dest.nodeName.toLowerCase();
 
@@ -5019,8 +5040,7 @@ jQuery.extend({
 			clone = elem.cloneNode( true ),
 			inPage = jQuery.contains( elem.ownerDocument, elem );
 
-		// Support: IE >= 9
-		// Fix Cloning issues
+		// Fix IE cloning issues
 		if ( !support.noCloneChecked && ( elem.nodeType === 1 || elem.nodeType === 11 ) &&
 				!jQuery.isXMLDoc( elem ) ) {
 
@@ -5071,8 +5091,8 @@ jQuery.extend({
 
 				// Add nodes directly
 				if ( jQuery.type( elem ) === "object" ) {
-					// Support: QtWebKit
-					// jQuery.merge because push.apply(_, arraylike) throws
+					// Support: QtWebKit, PhantomJS
+					// push.apply(_, arraylike) throws on ancient WebKit
 					jQuery.merge( nodes, elem.nodeType ? [ elem ] : elem );
 
 				// Convert non-html into a text node
@@ -5094,15 +5114,14 @@ jQuery.extend({
 						tmp = tmp.lastChild;
 					}
 
-					// Support: QtWebKit
-					// jQuery.merge because push.apply(_, arraylike) throws
+					// Support: QtWebKit, PhantomJS
+					// push.apply(_, arraylike) throws on ancient WebKit
 					jQuery.merge( nodes, tmp.childNodes );
 
 					// Remember the top-level container
 					tmp = fragment.firstChild;
 
-					// Fixes #12346
-					// Support: Webkit, IE
+					// Ensure the created nodes are orphaned (#12392)
 					tmp.textContent = "";
 				}
 			}
@@ -5464,7 +5483,7 @@ function actualDisplay( name, doc ) {
 		// getDefaultComputedStyle might be reliably used only on attached element
 		display = window.getDefaultComputedStyle && ( style = window.getDefaultComputedStyle( elem[ 0 ] ) ) ?
 
-			// Use of this method is a temporary fix (more like optmization) until something better comes along,
+			// Use of this method is a temporary fix (more like optimization) until something better comes along,
 			// since it was removed from specification and supported only in FF
 			style.display : jQuery.css( elem[ 0 ], "display" );
 
@@ -5514,7 +5533,14 @@ var rmargin = (/^margin/);
 var rnumnonpx = new RegExp( "^(" + pnum + ")(?!px)[a-z%]+$", "i" );
 
 var getStyles = function( elem ) {
-		return elem.ownerDocument.defaultView.getComputedStyle( elem, null );
+		// Support: IE<=11+, Firefox<=30+ (#15098, #14150)
+		// IE throws on elements created in popups
+		// FF meanwhile throws on frame elements through "defaultView.getComputedStyle"
+		if ( elem.ownerDocument.defaultView.opener ) {
+			return elem.ownerDocument.defaultView.getComputedStyle( elem, null );
+		}
+
+		return window.getComputedStyle( elem, null );
 	};
 
 
@@ -5526,7 +5552,7 @@ function curCSS( elem, name, computed ) {
 	computed = computed || getStyles( elem );
 
 	// Support: IE9
-	// getPropertyValue is only needed for .css('filter') in IE9, see #12537
+	// getPropertyValue is only needed for .css('filter') (#12537)
 	if ( computed ) {
 		ret = computed.getPropertyValue( name ) || computed[ name ];
 	}
@@ -5572,15 +5598,13 @@ function addGetHookIf( conditionFn, hookFn ) {
 	return {
 		get: function() {
 			if ( conditionFn() ) {
-				// Hook not needed (or it's not possible to use it due to missing dependency),
-				// remove it.
-				// Since there are no other hooks for marginRight, remove the whole object.
+				// Hook not needed (or it's not possible to use it due
+				// to missing dependency), remove it.
 				delete this.get;
 				return;
 			}
 
 			// Hook needed; redefine it so that the support test is not executed again.
-
 			return (this.get = hookFn).apply( this, arguments );
 		}
 	};
@@ -5597,6 +5621,8 @@ function addGetHookIf( conditionFn, hookFn ) {
 		return;
 	}
 
+	// Support: IE9-11+
+	// Style of cloned element affects source element cloned (#8908)
 	div.style.backgroundClip = "content-box";
 	div.cloneNode( true ).style.backgroundClip = "";
 	support.clearCloneStyle = div.style.backgroundClip === "content-box";
@@ -5629,6 +5655,7 @@ function addGetHookIf( conditionFn, hookFn ) {
 	if ( window.getComputedStyle ) {
 		jQuery.extend( support, {
 			pixelPosition: function() {
+
 				// This test is executed only once but we still do memoizing
 				// since we can use the boxSizingReliable pre-computing.
 				// No need to check if the test was already performed, though.
@@ -5642,6 +5669,7 @@ function addGetHookIf( conditionFn, hookFn ) {
 				return boxSizingReliableVal;
 			},
 			reliableMarginRight: function() {
+
 				// Support: Android 2.3
 				// Check if div with explicit width and no margin-right incorrectly
 				// gets computed margin-right based on width of container. (#3333)
@@ -5663,6 +5691,7 @@ function addGetHookIf( conditionFn, hookFn ) {
 				ret = !parseFloat( window.getComputedStyle( marginDiv, null ).marginRight );
 
 				docElem.removeChild( container );
+				div.removeChild( marginDiv );
 
 				return ret;
 			}
@@ -5694,8 +5723,8 @@ jQuery.swap = function( elem, options, callback, args ) {
 
 
 var
-	// swappable if display is none or starts with table except "table", "table-cell", or "table-caption"
-	// see here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
+	// Swappable if display is none or starts with table except "table", "table-cell", or "table-caption"
+	// See here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
 	rdisplayswap = /^(none|table(?!-c[ea]).+)/,
 	rnumsplit = new RegExp( "^(" + pnum + ")(.*)$", "i" ),
 	rrelNum = new RegExp( "^([+-])=(" + pnum + ")", "i" ),
@@ -5708,15 +5737,15 @@ var
 
 	cssPrefixes = [ "Webkit", "O", "Moz", "ms" ];
 
-// return a css property mapped to a potentially vendor prefixed property
+// Return a css property mapped to a potentially vendor prefixed property
 function vendorPropName( style, name ) {
 
-	// shortcut for names that are not vendor prefixed
+	// Shortcut for names that are not vendor prefixed
 	if ( name in style ) {
 		return name;
 	}
 
-	// check for vendor prefixed names
+	// Check for vendor prefixed names
 	var capName = name[0].toUpperCase() + name.slice(1),
 		origName = name,
 		i = cssPrefixes.length;
@@ -5749,7 +5778,7 @@ function augmentWidthOrHeight( elem, name, extra, isBorderBox, styles ) {
 		val = 0;
 
 	for ( ; i < 4; i += 2 ) {
-		// both box models exclude margin, so add it if we want it
+		// Both box models exclude margin, so add it if we want it
 		if ( extra === "margin" ) {
 			val += jQuery.css( elem, extra + cssExpand[ i ], true, styles );
 		}
@@ -5760,15 +5789,15 @@ function augmentWidthOrHeight( elem, name, extra, isBorderBox, styles ) {
 				val -= jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
 			}
 
-			// at this point, extra isn't border nor margin, so remove border
+			// At this point, extra isn't border nor margin, so remove border
 			if ( extra !== "margin" ) {
 				val -= jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
 			}
 		} else {
-			// at this point, extra isn't content, so add padding
+			// At this point, extra isn't content, so add padding
 			val += jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
 
-			// at this point, extra isn't content nor padding, so add border
+			// At this point, extra isn't content nor padding, so add border
 			if ( extra !== "padding" ) {
 				val += jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
 			}
@@ -5786,7 +5815,7 @@ function getWidthOrHeight( elem, name, extra ) {
 		styles = getStyles( elem ),
 		isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box";
 
-	// some non-html elements return undefined for offsetWidth, so check for null/undefined
+	// Some non-html elements return undefined for offsetWidth, so check for null/undefined
 	// svg - https://bugzilla.mozilla.org/show_bug.cgi?id=649285
 	// MathML - https://bugzilla.mozilla.org/show_bug.cgi?id=491668
 	if ( val <= 0 || val == null ) {
@@ -5801,7 +5830,7 @@ function getWidthOrHeight( elem, name, extra ) {
 			return val;
 		}
 
-		// we need the check for style in case a browser which returns unreliable values
+		// Check for style in case a browser which returns unreliable values
 		// for getComputedStyle silently falls back to the reliable elem.style
 		valueIsBorderBox = isBorderBox &&
 			( support.boxSizingReliable() || val === elem.style[ name ] );
@@ -5810,7 +5839,7 @@ function getWidthOrHeight( elem, name, extra ) {
 		val = parseFloat( val ) || 0;
 	}
 
-	// use the active box-sizing model to add/subtract irrelevant styles
+	// Use the active box-sizing model to add/subtract irrelevant styles
 	return ( val +
 		augmentWidthOrHeight(
 			elem,
@@ -5874,12 +5903,14 @@ function showHide( elements, show ) {
 }
 
 jQuery.extend({
+
 	// Add in style property hooks for overriding the default
 	// behavior of getting and setting a style property
 	cssHooks: {
 		opacity: {
 			get: function( elem, computed ) {
 				if ( computed ) {
+
 					// We should always get a number back from opacity
 					var ret = curCSS( elem, "opacity" );
 					return ret === "" ? "1" : ret;
@@ -5907,12 +5938,12 @@ jQuery.extend({
 	// Add in properties whose names you wish to fix before
 	// setting or getting the value
 	cssProps: {
-		// normalize float css property
 		"float": "cssFloat"
 	},
 
 	// Get and set the style property on a DOM Node
 	style: function( elem, name, value, extra ) {
+
 		// Don't set styles on text and comment nodes
 		if ( !elem || elem.nodeType === 3 || elem.nodeType === 8 || !elem.style ) {
 			return;
@@ -5925,33 +5956,32 @@ jQuery.extend({
 
 		name = jQuery.cssProps[ origName ] || ( jQuery.cssProps[ origName ] = vendorPropName( style, origName ) );
 
-		// gets hook for the prefixed version
-		// followed by the unprefixed version
+		// Gets hook for the prefixed version, then unprefixed version
 		hooks = jQuery.cssHooks[ name ] || jQuery.cssHooks[ origName ];
 
 		// Check if we're setting a value
 		if ( value !== undefined ) {
 			type = typeof value;
 
-			// convert relative number strings (+= or -=) to relative numbers. #7345
+			// Convert "+=" or "-=" to relative numbers (#7345)
 			if ( type === "string" && (ret = rrelNum.exec( value )) ) {
 				value = ( ret[1] + 1 ) * ret[2] + parseFloat( jQuery.css( elem, name ) );
 				// Fixes bug #9237
 				type = "number";
 			}
 
-			// Make sure that null and NaN values aren't set. See: #7116
+			// Make sure that null and NaN values aren't set (#7116)
 			if ( value == null || value !== value ) {
 				return;
 			}
 
-			// If a number was passed in, add 'px' to the (except for certain CSS properties)
+			// If a number, add 'px' to the (except for certain CSS properties)
 			if ( type === "number" && !jQuery.cssNumber[ origName ] ) {
 				value += "px";
 			}
 
-			// Fixes #8908, it can be done more correctly by specifying setters in cssHooks,
-			// but it would mean to define eight (for every problematic property) identical functions
+			// Support: IE9-11+
+			// background-* props affect original clone's values
 			if ( !support.clearCloneStyle && value === "" && name.indexOf( "background" ) === 0 ) {
 				style[ name ] = "inherit";
 			}
@@ -5979,8 +6009,7 @@ jQuery.extend({
 		// Make sure that we're working with the right name
 		name = jQuery.cssProps[ origName ] || ( jQuery.cssProps[ origName ] = vendorPropName( elem.style, origName ) );
 
-		// gets hook for the prefixed version
-		// followed by the unprefixed version
+		// Try prefixed name followed by the unprefixed name
 		hooks = jQuery.cssHooks[ name ] || jQuery.cssHooks[ origName ];
 
 		// If a hook was provided get the computed value from there
@@ -5993,12 +6022,12 @@ jQuery.extend({
 			val = curCSS( elem, name, styles );
 		}
 
-		//convert "normal" to computed value
+		// Convert "normal" to computed value
 		if ( val === "normal" && name in cssNormalTransform ) {
 			val = cssNormalTransform[ name ];
 		}
 
-		// Return, converting to number if forced or a qualifier was provided and val looks numeric
+		// Make numeric if forced or a qualifier was provided and val looks numeric
 		if ( extra === "" || extra ) {
 			num = parseFloat( val );
 			return extra === true || jQuery.isNumeric( num ) ? num || 0 : val;
@@ -6011,8 +6040,9 @@ jQuery.each([ "height", "width" ], function( i, name ) {
 	jQuery.cssHooks[ name ] = {
 		get: function( elem, computed, extra ) {
 			if ( computed ) {
-				// certain elements can have dimension info if we invisibly show them
-				// however, it must have a current display style that would benefit from this
+
+				// Certain elements can have dimension info if we invisibly show them
+				// but it must have a current display style that would benefit
 				return rdisplayswap.test( jQuery.css( elem, "display" ) ) && elem.offsetWidth === 0 ?
 					jQuery.swap( elem, cssShow, function() {
 						return getWidthOrHeight( elem, name, extra );
@@ -6040,8 +6070,6 @@ jQuery.each([ "height", "width" ], function( i, name ) {
 jQuery.cssHooks.marginRight = addGetHookIf( support.reliableMarginRight,
 	function( elem, computed ) {
 		if ( computed ) {
-			// WebKit Bug 13343 - getComputedStyle returns wrong value for margin-right
-			// Work around by temporarily setting element display to inline-block
 			return jQuery.swap( elem, { "display": "inline-block" },
 				curCSS, [ elem, "marginRight" ] );
 		}
@@ -6059,7 +6087,7 @@ jQuery.each({
 			var i = 0,
 				expanded = {},
 
-				// assumes a single number if not a string
+				// Assumes a single number if not a string
 				parts = typeof value === "string" ? value.split(" ") : [ value ];
 
 			for ( ; i < 4; i++ ) {
@@ -6182,17 +6210,18 @@ Tween.propHooks = {
 				return tween.elem[ tween.prop ];
 			}
 
-			// passing an empty string as a 3rd parameter to .css will automatically
-			// attempt a parseFloat and fallback to a string if the parse fails
-			// so, simple values such as "10px" are parsed to Float.
-			// complex values such as "rotate(1rad)" are returned as is.
+			// Passing an empty string as a 3rd parameter to .css will automatically
+			// attempt a parseFloat and fallback to a string if the parse fails.
+			// Simple values such as "10px" are parsed to Float;
+			// complex values such as "rotate(1rad)" are returned as-is.
 			result = jQuery.css( tween.elem, tween.prop, "" );
 			// Empty strings, null, undefined and "auto" are converted to 0.
 			return !result || result === "auto" ? 0 : result;
 		},
 		set: function( tween ) {
-			// use step hook for back compat - use cssHook if its there - use .style if its
-			// available and use plain properties where available
+			// Use step hook for back compat.
+			// Use cssHook if its there.
+			// Use .style if available and use plain properties where available.
 			if ( jQuery.fx.step[ tween.prop ] ) {
 				jQuery.fx.step[ tween.prop ]( tween );
 			} else if ( tween.elem.style && ( tween.elem.style[ jQuery.cssProps[ tween.prop ] ] != null || jQuery.cssHooks[ tween.prop ] ) ) {
@@ -6206,7 +6235,6 @@ Tween.propHooks = {
 
 // Support: IE9
 // Panic based approach to setting things on disconnected nodes
-
 Tween.propHooks.scrollTop = Tween.propHooks.scrollLeft = {
 	set: function( tween ) {
 		if ( tween.elem.nodeType && tween.elem.parentNode ) {
@@ -6262,16 +6290,16 @@ var
 				start = +target || 1;
 
 				do {
-					// If previous iteration zeroed out, double until we get *something*
-					// Use a string for doubling factor so we don't accidentally see scale as unchanged below
+					// If previous iteration zeroed out, double until we get *something*.
+					// Use string for doubling so we don't accidentally see scale as unchanged below
 					scale = scale || ".5";
 
 					// Adjust and apply
 					start = start / scale;
 					jQuery.style( tween.elem, prop, start + unit );
 
-				// Update scale, tolerating zero or NaN from tween.cur()
-				// And breaking the loop if scale is unchanged or perfect, or if we've just had enough
+				// Update scale, tolerating zero or NaN from tween.cur(),
+				// break the loop if scale is unchanged or perfect, or if we've just had enough
 				} while ( scale !== (scale = tween.cur() / target) && scale !== 1 && --maxIterations );
 			}
 
@@ -6303,8 +6331,8 @@ function genFx( type, includeWidth ) {
 		i = 0,
 		attrs = { height: type };
 
-	// if we include width, step value is 1 to do all cssExpand values,
-	// if we don't include width, step value is 2 to skip over Left and Right
+	// If we include width, step value is 1 to do all cssExpand values,
+	// otherwise step value is 2 to skip over Left and Right
 	includeWidth = includeWidth ? 1 : 0;
 	for ( ; i < 4 ; i += 2 - includeWidth ) {
 		which = cssExpand[ i ];
@@ -6326,7 +6354,7 @@ function createTween( value, prop, animation ) {
 	for ( ; index < length; index++ ) {
 		if ( (tween = collection[ index ].call( animation, prop, value )) ) {
 
-			// we're done with this property
+			// We're done with this property
 			return tween;
 		}
 	}
@@ -6341,7 +6369,7 @@ function defaultPrefilter( elem, props, opts ) {
 		hidden = elem.nodeType && isHidden( elem ),
 		dataShow = data_priv.get( elem, "fxshow" );
 
-	// handle queue: false promises
+	// Handle queue: false promises
 	if ( !opts.queue ) {
 		hooks = jQuery._queueHooks( elem, "fx" );
 		if ( hooks.unqueued == null ) {
@@ -6356,8 +6384,7 @@ function defaultPrefilter( elem, props, opts ) {
 		hooks.unqueued++;
 
 		anim.always(function() {
-			// doing this makes sure that the complete handler will be called
-			// before this completes
+			// Ensure the complete handler is called before this completes
 			anim.always(function() {
 				hooks.unqueued--;
 				if ( !jQuery.queue( elem, "fx" ).length ) {
@@ -6367,7 +6394,7 @@ function defaultPrefilter( elem, props, opts ) {
 		});
 	}
 
-	// height/width overflow pass
+	// Height/width overflow pass
 	if ( elem.nodeType === 1 && ( "height" in props || "width" in props ) ) {
 		// Make sure that nothing sneaks out
 		// Record all 3 overflow attributes because IE9-10 do not
@@ -6429,7 +6456,7 @@ function defaultPrefilter( elem, props, opts ) {
 			dataShow = data_priv.access( elem, "fxshow", {} );
 		}
 
-		// store state if its toggle - enables .stop().toggle() to "reverse"
+		// Store state if its toggle - enables .stop().toggle() to "reverse"
 		if ( toggle ) {
 			dataShow.hidden = !hidden;
 		}
@@ -6489,8 +6516,8 @@ function propFilter( props, specialEasing ) {
 			value = hooks.expand( value );
 			delete props[ name ];
 
-			// not quite $.extend, this wont overwrite keys already present.
-			// also - reusing 'index' from above because we have the correct "name"
+			// Not quite $.extend, this won't overwrite existing keys.
+			// Reusing 'index' because we have the correct "name"
 			for ( index in value ) {
 				if ( !( index in props ) ) {
 					props[ index ] = value[ index ];
@@ -6509,7 +6536,7 @@ function Animation( elem, properties, options ) {
 		index = 0,
 		length = animationPrefilters.length,
 		deferred = jQuery.Deferred().always( function() {
-			// don't match elem in the :animated selector
+			// Don't match elem in the :animated selector
 			delete tick.elem;
 		}),
 		tick = function() {
@@ -6518,7 +6545,8 @@ function Animation( elem, properties, options ) {
 			}
 			var currentTime = fxNow || createFxNow(),
 				remaining = Math.max( 0, animation.startTime + animation.duration - currentTime ),
-				// archaic crash bug won't allow us to use 1 - ( 0.5 || 0 ) (#12497)
+				// Support: Android 2.3
+				// Archaic crash bug won't allow us to use `1 - ( 0.5 || 0 )` (#12497)
 				temp = remaining / animation.duration || 0,
 				percent = 1 - temp,
 				index = 0,
@@ -6554,7 +6582,7 @@ function Animation( elem, properties, options ) {
 			},
 			stop: function( gotoEnd ) {
 				var index = 0,
-					// if we are going to the end, we want to run all the tweens
+					// If we are going to the end, we want to run all the tweens
 					// otherwise we skip this part
 					length = gotoEnd ? animation.tweens.length : 0;
 				if ( stopped ) {
@@ -6565,8 +6593,7 @@ function Animation( elem, properties, options ) {
 					animation.tweens[ index ].run( 1 );
 				}
 
-				// resolve when we played the last frame
-				// otherwise, reject
+				// Resolve when we played the last frame; otherwise, reject
 				if ( gotoEnd ) {
 					deferred.resolveWith( elem, [ animation, gotoEnd ] );
 				} else {
@@ -6648,7 +6675,7 @@ jQuery.speed = function( speed, easing, fn ) {
 	opt.duration = jQuery.fx.off ? 0 : typeof opt.duration === "number" ? opt.duration :
 		opt.duration in jQuery.fx.speeds ? jQuery.fx.speeds[ opt.duration ] : jQuery.fx.speeds._default;
 
-	// normalize opt.queue - true/undefined/null -> "fx"
+	// Normalize opt.queue - true/undefined/null -> "fx"
 	if ( opt.queue == null || opt.queue === true ) {
 		opt.queue = "fx";
 	}
@@ -6672,10 +6699,10 @@ jQuery.speed = function( speed, easing, fn ) {
 jQuery.fn.extend({
 	fadeTo: function( speed, to, easing, callback ) {
 
-		// show any hidden elements after setting opacity to 0
+		// Show any hidden elements after setting opacity to 0
 		return this.filter( isHidden ).css( "opacity", 0 ).show()
 
-			// animate to the value specified
+			// Animate to the value specified
 			.end().animate({ opacity: to }, speed, easing, callback );
 	},
 	animate: function( prop, speed, easing, callback ) {
@@ -6738,9 +6765,9 @@ jQuery.fn.extend({
 				}
 			}
 
-			// start the next in the queue if the last step wasn't forced
-			// timers currently will call their complete callbacks, which will dequeue
-			// but only if they were gotoEnd
+			// Start the next in the queue if the last step wasn't forced.
+			// Timers currently will call their complete callbacks, which
+			// will dequeue but only if they were gotoEnd.
 			if ( dequeue || !gotoEnd ) {
 				jQuery.dequeue( this, type );
 			}
@@ -6758,17 +6785,17 @@ jQuery.fn.extend({
 				timers = jQuery.timers,
 				length = queue ? queue.length : 0;
 
-			// enable finishing flag on private data
+			// Enable finishing flag on private data
 			data.finish = true;
 
-			// empty the queue first
+			// Empty the queue first
 			jQuery.queue( this, type, [] );
 
 			if ( hooks && hooks.stop ) {
 				hooks.stop.call( this, true );
 			}
 
-			// look for any active animations, and finish them
+			// Look for any active animations, and finish them
 			for ( index = timers.length; index--; ) {
 				if ( timers[ index ].elem === this && timers[ index ].queue === type ) {
 					timers[ index ].anim.stop( true );
@@ -6776,14 +6803,14 @@ jQuery.fn.extend({
 				}
 			}
 
-			// look for any animations in the old queue and finish them
+			// Look for any animations in the old queue and finish them
 			for ( index = 0; index < length; index++ ) {
 				if ( queue[ index ] && queue[ index ].finish ) {
 					queue[ index ].finish.call( this );
 				}
 			}
 
-			// turn off finishing flag
+			// Turn off finishing flag
 			delete data.finish;
 		});
 	}
@@ -6886,21 +6913,21 @@ jQuery.fn.delay = function( time, type ) {
 
 	input.type = "checkbox";
 
-	// Support: iOS 5.1, Android 4.x, Android 2.3
-	// Check the default checkbox/radio value ("" on old WebKit; "on" elsewhere)
+	// Support: iOS<=5.1, Android<=4.2+
+	// Default value for a checkbox should be "on"
 	support.checkOn = input.value !== "";
 
-	// Must access the parent to make an option select properly
-	// Support: IE9, IE10
+	// Support: IE<=11+
+	// Must access selectedIndex to make default options select
 	support.optSelected = opt.selected;
 
-	// Make sure that the options inside disabled selects aren't marked as disabled
-	// (WebKit marks them as disabled)
+	// Support: Android<=2.3
+	// Options inside disabled selects are incorrectly marked as disabled
 	select.disabled = true;
 	support.optDisabled = !opt.disabled;
 
-	// Check if an input maintains its value after becoming a radio
-	// Support: IE9, IE10
+	// Support: IE<=11+
+	// An input loses its value after becoming a radio
 	input = document.createElement( "input" );
 	input.value = "t";
 	input.type = "radio";
@@ -6997,8 +7024,6 @@ jQuery.extend({
 			set: function( elem, value ) {
 				if ( !support.radioValue && value === "radio" &&
 					jQuery.nodeName( elem, "input" ) ) {
-					// Setting the type on a radio button after the value resets the value in IE6-9
-					// Reset value to default in case type is set after value during creation
 					var val = elem.value;
 					elem.setAttribute( "type", value );
 					if ( val ) {
@@ -7068,7 +7093,7 @@ jQuery.extend({
 		var ret, hooks, notxml,
 			nType = elem.nodeType;
 
-		// don't get/set properties on text, comment and attribute nodes
+		// Don't get/set properties on text, comment and attribute nodes
 		if ( !elem || nType === 3 || nType === 8 || nType === 2 ) {
 			return;
 		}
@@ -7104,8 +7129,6 @@ jQuery.extend({
 	}
 });
 
-// Support: IE9+
-// Selectedness for an option in an optgroup can be inaccurate
 if ( !support.optSelected ) {
 	jQuery.propHooks.selected = {
 		get: function( elem ) {
@@ -7213,7 +7236,7 @@ jQuery.fn.extend({
 						}
 					}
 
-					// only assign if different to avoid unneeded rendering.
+					// Only assign if different to avoid unneeded rendering.
 					finalValue = value ? jQuery.trim( cur ) : "";
 					if ( elem.className !== finalValue ) {
 						elem.className = finalValue;
@@ -7240,14 +7263,14 @@ jQuery.fn.extend({
 
 		return this.each(function() {
 			if ( type === "string" ) {
-				// toggle individual class names
+				// Toggle individual class names
 				var className,
 					i = 0,
 					self = jQuery( this ),
 					classNames = value.match( rnotwhite ) || [];
 
 				while ( (className = classNames[ i++ ]) ) {
-					// check each className given, space separated list
+					// Check each className given, space separated list
 					if ( self.hasClass( className ) ) {
 						self.removeClass( className );
 					} else {
@@ -7262,7 +7285,7 @@ jQuery.fn.extend({
 					data_priv.set( this, "__className__", this.className );
 				}
 
-				// If the element has a class name or if we're passed "false",
+				// If the element has a class name or if we're passed `false`,
 				// then remove the whole classname (if there was one, the above saved it).
 				// Otherwise bring back whatever was previously saved (if anything),
 				// falling back to the empty string if nothing was stored.
@@ -7306,9 +7329,9 @@ jQuery.fn.extend({
 				ret = elem.value;
 
 				return typeof ret === "string" ?
-					// handle most common string cases
+					// Handle most common string cases
 					ret.replace(rreturn, "") :
-					// handle cases where value is null/undef or number
+					// Handle cases where value is null/undef or number
 					ret == null ? "" : ret;
 			}
 
@@ -7416,7 +7439,7 @@ jQuery.extend({
 					}
 				}
 
-				// force browsers to behave consistently when non-matching value is set
+				// Force browsers to behave consistently when non-matching value is set
 				if ( !optionSet ) {
 					elem.selectedIndex = -1;
 				}
@@ -7437,8 +7460,6 @@ jQuery.each([ "radio", "checkbox" ], function() {
 	};
 	if ( !support.checkOn ) {
 		jQuery.valHooks[ this ].get = function( elem ) {
-			// Support: Webkit
-			// "" is returned instead of "on" if a value isn't specified
 			return elem.getAttribute("value") === null ? "on" : elem.value;
 		};
 	}
@@ -7520,10 +7541,6 @@ jQuery.parseXML = function( data ) {
 
 
 var
-	// Document location
-	ajaxLocParts,
-	ajaxLocation,
-
 	rhash = /#.*$/,
 	rts = /([?&])_=[^&]*/,
 	rheaders = /^(.*?):[ \t]*([^\r\n]*)$/mg,
@@ -7552,22 +7569,13 @@ var
 	transports = {},
 
 	// Avoid comment-prolog char sequence (#10098); must appease lint and evade compression
-	allTypes = "*/".concat("*");
+	allTypes = "*/".concat( "*" ),
 
-// #8138, IE may throw an exception when accessing
-// a field from window.location if document.domain has been set
-try {
-	ajaxLocation = location.href;
-} catch( e ) {
-	// Use the href attribute of an A element
-	// since IE will modify it given document.location
-	ajaxLocation = document.createElement( "a" );
-	ajaxLocation.href = "";
-	ajaxLocation = ajaxLocation.href;
-}
+	// Document location
+	ajaxLocation = window.location.href,
 
-// Segment location into parts
-ajaxLocParts = rurl.exec( ajaxLocation.toLowerCase() ) || [];
+	// Segment location into parts
+	ajaxLocParts = rurl.exec( ajaxLocation.toLowerCase() ) || [];
 
 // Base "constructor" for jQuery.ajaxPrefilter and jQuery.ajaxTransport
 function addToPrefiltersOrTransports( structure ) {
@@ -8046,7 +8054,8 @@ jQuery.extend({
 		}
 
 		// We can fire global events as of now if asked to
-		fireGlobals = s.global;
+		// Don't fire events if jQuery.event is undefined in an AMD-usage scenario (#15118)
+		fireGlobals = jQuery.event && s.global;
 
 		// Watch for a new set of requests
 		if ( fireGlobals && jQuery.active++ === 0 ) {
@@ -8119,7 +8128,7 @@ jQuery.extend({
 			return jqXHR.abort();
 		}
 
-		// aborting is no longer a cancellation
+		// Aborting is no longer a cancellation
 		strAbort = "abort";
 
 		// Install callbacks on deferreds
@@ -8231,8 +8240,7 @@ jQuery.extend({
 					isSuccess = !error;
 				}
 			} else {
-				// We extract error from statusText
-				// then normalize statusText and status for non-aborts
+				// Extract error from statusText and normalize for non-aborts
 				error = statusText;
 				if ( status || !statusText ) {
 					statusText = "error";
@@ -8288,7 +8296,7 @@ jQuery.extend({
 
 jQuery.each( [ "get", "post" ], function( i, method ) {
 	jQuery[ method ] = function( url, data, callback, type ) {
-		// shift arguments if data argument was omitted
+		// Shift arguments if data argument was omitted
 		if ( jQuery.isFunction( data ) ) {
 			type = type || callback;
 			callback = data;
@@ -8302,13 +8310,6 @@ jQuery.each( [ "get", "post" ], function( i, method ) {
 			data: data,
 			success: callback
 		});
-	};
-});
-
-// Attach a bunch of functions for handling common AJAX events
-jQuery.each( [ "ajaxStart", "ajaxStop", "ajaxComplete", "ajaxError", "ajaxSuccess", "ajaxSend" ], function( i, type ) {
-	jQuery.fn[ type ] = function( fn ) {
-		return this.on( type, fn );
 	};
 });
 
@@ -8529,8 +8530,9 @@ var xhrId = 0,
 
 // Support: IE9
 // Open requests must be manually aborted on unload (#5280)
-if ( window.ActiveXObject ) {
-	jQuery( window ).on( "unload", function() {
+// See https://support.microsoft.com/kb/2856746 for more info
+if ( window.attachEvent ) {
+	window.attachEvent( "onunload", function() {
 		for ( var key in xhrCallbacks ) {
 			xhrCallbacks[ key ]();
 		}
@@ -8883,6 +8885,16 @@ jQuery.fn.load = function( url, params, callback ) {
 
 
 
+// Attach a bunch of functions for handling common AJAX events
+jQuery.each( [ "ajaxStart", "ajaxStop", "ajaxComplete", "ajaxError", "ajaxSuccess", "ajaxSend" ], function( i, type ) {
+	jQuery.fn[ type ] = function( fn ) {
+		return this.on( type, fn );
+	};
+});
+
+
+
+
 jQuery.expr.filters.animated = function( elem ) {
 	return jQuery.grep(jQuery.timers, function( fn ) {
 		return elem === fn.elem;
@@ -8919,7 +8931,8 @@ jQuery.offset = {
 		calculatePosition = ( position === "absolute" || position === "fixed" ) &&
 			( curCSSTop + curCSSLeft ).indexOf("auto") > -1;
 
-		// Need to be able to calculate position if either top or left is auto and position is either absolute or fixed
+		// Need to be able to calculate position if either
+		// top or left is auto and position is either absolute or fixed
 		if ( calculatePosition ) {
 			curPosition = curElem.position();
 			curTop = curPosition.top;
@@ -8976,8 +8989,8 @@ jQuery.fn.extend({
 			return box;
 		}
 
+		// Support: BlackBerry 5, iOS 3 (original iPhone)
 		// If we don't have gBCR, just use 0,0 rather than error
-		// BlackBerry 5, iOS 3 (original iPhone)
 		if ( typeof elem.getBoundingClientRect !== strundefined ) {
 			box = elem.getBoundingClientRect();
 		}
@@ -8999,7 +9012,7 @@ jQuery.fn.extend({
 
 		// Fixed elements are offset from window (parentOffset = {top:0, left: 0}, because it is its only offset parent
 		if ( jQuery.css( elem, "position" ) === "fixed" ) {
-			// We assume that getBoundingClientRect is available when computed position is fixed
+			// Assume getBoundingClientRect is there when computed position is fixed
 			offset = elem.getBoundingClientRect();
 
 		} else {
@@ -9062,16 +9075,18 @@ jQuery.each( { scrollLeft: "pageXOffset", scrollTop: "pageYOffset" }, function( 
 	};
 });
 
+// Support: Safari<7+, Chrome<37+
 // Add the top/left cssHooks using jQuery.fn.position
 // Webkit bug: https://bugs.webkit.org/show_bug.cgi?id=29084
-// getComputedStyle returns percent when specified for top/left/bottom/right
-// rather than make the css module depend on the offset module, we just check for it here
+// Blink bug: https://code.google.com/p/chromium/issues/detail?id=229280
+// getComputedStyle returns percent when specified for top/left/bottom/right;
+// rather than make the css module depend on the offset module, just check for it here
 jQuery.each( [ "top", "left" ], function( i, prop ) {
 	jQuery.cssHooks[ prop ] = addGetHookIf( support.pixelPosition,
 		function( elem, computed ) {
 			if ( computed ) {
 				computed = curCSS( elem, prop );
-				// if curCSS returns percentage, fallback to offset
+				// If curCSS returns percentage, fallback to offset
 				return rnumnonpx.test( computed ) ?
 					jQuery( elem ).position()[ prop ] + "px" :
 					computed;
@@ -9084,7 +9099,7 @@ jQuery.each( [ "top", "left" ], function( i, prop ) {
 // Create innerHeight, innerWidth, height, width, outerHeight and outerWidth methods
 jQuery.each( { Height: "height", Width: "width" }, function( name, type ) {
 	jQuery.each( { padding: "inner" + name, content: type, "": "outer" + name }, function( defaultExtra, funcName ) {
-		// margin is only for outerHeight, outerWidth
+		// Margin is only for outerHeight, outerWidth
 		jQuery.fn[ funcName ] = function( margin, value ) {
 			var chainable = arguments.length && ( defaultExtra || typeof margin !== "boolean" ),
 				extra = defaultExtra || ( margin === true || value === true ? "margin" : "border" );
@@ -9175,8 +9190,8 @@ jQuery.noConflict = function( deep ) {
 	return jQuery;
 };
 
-// Expose jQuery and $ identifiers, even in
-// AMD (#7102#comment:10, https://github.com/jquery/jquery/pull/557)
+// Expose jQuery and $ identifiers, even in AMD
+// (#7102#comment:10, https://github.com/jquery/jquery/pull/557)
 // and CommonJS for browser emulators (#13566)
 if ( typeof noGlobal === strundefined ) {
 	window.jQuery = window.$ = jQuery;
@@ -11304,13 +11319,13 @@ if (typeof jQuery === 'undefined') { throw new Error('Bootstrap\'s JavaScript re
 
 }(jQuery);
 
-/* Chartist.js 0.4.3
+/* Chartist.js 0.4.4
  * Copyright © 2014 Gion Kunz
  * Free to use under the WTFPL license.
  * http://www.wtfpl.net/
  */
 
-!function(a,b){"function"==typeof define&&define.amd?define([],function(){return a.returnExportsGlobal=b()}):"object"==typeof exports?module.exports=b():a.Chartist=b()}(this,function(){var a={version:"0.4.3"};return function(a,b,c){"use strict";c.noop=function(a){return a},c.alphaNumerate=function(a){return String.fromCharCode(97+a%26)},c.extend=function(a){a=a||{};var b=Array.prototype.slice.call(arguments,1);return b.forEach(function(b){for(var d in b)a[d]="object"!=typeof b[d]||b[d]instanceof Array?b[d]:c.extend(a[d],b[d])}),a},c.stripUnit=function(a){return"string"==typeof a&&(a=a.replace(/[^0-9\+-\.]/g,"")),+a},c.ensureUnit=function(a,b){return"number"==typeof a&&(a+=b),a},c.querySelector=function(a){return a instanceof Node?a:b.querySelector(a)},c.createSvg=function(a,b,d,e){var f;return b=b||"100%",d=d||"100%",f=a.querySelector("svg"),f&&a.removeChild(f),f=new c.Svg("svg").attr({width:b,height:d}).addClass(e).attr({style:"width: "+b+"; height: "+d+";"}),a.appendChild(f._node),f},c.getDataArray=function(a){for(var b=[],c=0;c<a.series.length;c++){b[c]="object"==typeof a.series[c]&&void 0!==a.series[c].data?a.series[c].data:a.series[c];for(var d=0;d<b[c].length;d++)b[c][d]=+b[c][d]}return b},c.normalizeDataArray=function(a,b){for(var c=0;c<a.length;c++)if(a[c].length!==b)for(var d=a[c].length;b>d;d++)a[c][d]=0;return a},c.orderOfMagnitude=function(a){return Math.floor(Math.log(Math.abs(a))/Math.LN10)},c.projectLength=function(a,b,d,e){var f=c.getAvailableHeight(a,e);return b/d.range*f},c.getAvailableHeight=function(a,b){return Math.max((c.stripUnit(b.height)||a.height())-2*b.chartPadding-b.axisX.offset,0)},c.getHighLow=function(a){var b,c,d={high:-Number.MAX_VALUE,low:Number.MAX_VALUE};for(b=0;b<a.length;b++)for(c=0;c<a[b].length;c++)a[b][c]>d.high&&(d.high=a[b][c]),a[b][c]<d.low&&(d.low=a[b][c]);return d},c.getBounds=function(a,b,d,e){var f,g,h,i=c.getHighLow(b);i.high=+d.high||(0===d.high?0:i.high),i.low=+d.low||(0===d.low?0:i.low),i.high===i.low&&(0===i.low?i.high=1:i.low<0?i.high=0:i.low=0),(e||0===e)&&(i.high=Math.max(e,i.high),i.low=Math.min(e,i.low)),i.valueRange=i.high-i.low,i.oom=c.orderOfMagnitude(i.valueRange),i.min=Math.floor(i.low/Math.pow(10,i.oom))*Math.pow(10,i.oom),i.max=Math.ceil(i.high/Math.pow(10,i.oom))*Math.pow(10,i.oom),i.range=i.max-i.min,i.step=Math.pow(10,i.oom),i.numberOfSteps=Math.round(i.range/i.step);for(var j=c.projectLength(a,i.step,i,d),k=j<d.axisY.scaleMinSpace;;)if(k&&c.projectLength(a,i.step,i,d)<=d.axisY.scaleMinSpace)i.step*=2;else{if(k||!(c.projectLength(a,i.step/2,i,d)>=d.axisY.scaleMinSpace))break;i.step/=2}for(g=i.min,h=i.max,f=i.min;f<=i.max;f+=i.step)f+i.step<i.low&&(g+=i.step),f-i.step>=i.high&&(h-=i.step);for(i.min=g,i.max=h,i.range=i.max-i.min,i.values=[],f=i.min;f<=i.max;f+=i.step)i.values.push(f);return i},c.polarToCartesian=function(a,b,c,d){var e=(d-90)*Math.PI/180;return{x:a+c*Math.cos(e),y:b+c*Math.sin(e)}},c.createChartRect=function(a,b){var d=b.axisY?b.axisY.offset:0,e=b.axisX?b.axisX.offset:0;return{x1:b.chartPadding+d,y1:Math.max((c.stripUnit(b.height)||a.height())-b.chartPadding-e,b.chartPadding),x2:Math.max((c.stripUnit(b.width)||a.width())-b.chartPadding,b.chartPadding+d),y2:b.chartPadding,width:function(){return this.x2-this.x1},height:function(){return this.y1-this.y2}}},c.createLabel=function(a,b,c,d,e){if(e){var f='<span class="'+d+'">'+b+"</span>";return a.foreignObject(f,c)}return a.elem("text",c,d).text(b)},c.createXAxis=function(b,d,e,f,g,h,i){d.labels.forEach(function(j,k){var l=g.axisX.labelInterpolationFnc(j,k),m=b.width()/d.labels.length,n=g.axisX.offset,o=b.x1+m*k;if(l||0===l){if(g.axisX.showGrid){var p=e.elem("line",{x1:o,y1:b.y1,x2:o,y2:b.y2},[g.classNames.grid,g.classNames.horizontal].join(" "));h.emit("draw",{type:"grid",axis:"x",index:k,group:e,element:p,x1:o,y1:b.y1,x2:o,y2:b.y2})}if(g.axisX.showLabel){var q={x:o+g.axisX.labelOffset.x,y:b.y1+g.axisX.labelOffset.y+(i?5:20)},r=c.createLabel(f,""+l,{x:q.x,y:q.y,width:m,height:n,style:"overflow: visible;"},[g.classNames.label,g.classNames.horizontal].join(" "),i);h.emit("draw",{type:"label",axis:"x",index:k,group:f,element:r,text:""+l,x:q.x,y:q.y,width:m,height:n,get space(){return a.console.warn("EventEmitter: space is deprecated, use width or height instead."),this.width}})}}})},c.createYAxis=function(b,d,e,f,g,h,i){d.values.forEach(function(j,k){var l=g.axisY.labelInterpolationFnc(j,k),m=g.axisY.offset,n=b.height()/d.values.length,o=b.y1-n*k;if(l||0===l){if(g.axisY.showGrid){var p=e.elem("line",{x1:b.x1,y1:o,x2:b.x2,y2:o},[g.classNames.grid,g.classNames.vertical].join(" "));h.emit("draw",{type:"grid",axis:"y",index:k,group:e,element:p,x1:b.x1,y1:o,x2:b.x2,y2:o})}if(g.axisY.showLabel){var q={x:g.chartPadding+g.axisY.labelOffset.x+(i?-10:0),y:o+g.axisY.labelOffset.y+(i?-15:0)},r=c.createLabel(f,""+l,{x:q.x,y:q.y,width:m,height:n,style:"overflow: visible;"},[g.classNames.label,g.classNames.vertical].join(" "),i);h.emit("draw",{type:"label",axis:"y",index:k,group:f,element:r,text:""+l,x:q.x,y:q.y,width:m,height:n,get space(){return a.console.warn("EventEmitter: space is deprecated, use width or height instead."),this.height}})}}})},c.projectPoint=function(a,b,c,d){return{x:a.x1+a.width()/c.length*d,y:a.y1-a.height()*(c[d]-b.min)/(b.range+b.step)}},c.optionsProvider=function(b,d,e){function f(){var b=h;if(h=c.extend({},j),d)for(i=0;i<d.length;i++){var f=a.matchMedia(d[i][0]);f.matches&&(h=c.extend(h,d[i][1]))}e&&e.emit("optionsChanged",{previousOptions:b,currentOptions:h})}function g(){k.forEach(function(a){a.removeListener(f)})}var h,i,j=c.extend({},b),k=[];if(!a.matchMedia)throw"window.matchMedia not found! Make sure you're using a polyfill.";if(d)for(i=0;i<d.length;i++){var l=a.matchMedia(d[i][0]);l.addListener(f),k.push(l)}return f(),{get currentOptions(){return c.extend({},h)},removeMediaQueryListeners:g}},c.catmullRom2bezier=function(a,b){for(var c=[],d=0,e=a.length;e-2*!b>d;d+=2){var f=[{x:+a[d-2],y:+a[d-1]},{x:+a[d],y:+a[d+1]},{x:+a[d+2],y:+a[d+3]},{x:+a[d+4],y:+a[d+5]}];b?d?e-4===d?f[3]={x:+a[0],y:+a[1]}:e-2===d&&(f[2]={x:+a[0],y:+a[1]},f[3]={x:+a[2],y:+a[3]}):f[0]={x:+a[e-2],y:+a[e-1]}:e-4===d?f[3]=f[2]:d||(f[0]={x:+a[d],y:+a[d+1]}),c.push([(-f[0].x+6*f[1].x+f[2].x)/6,(-f[0].y+6*f[1].y+f[2].y)/6,(f[1].x+6*f[2].x-f[3].x)/6,(f[1].y+6*f[2].y-f[3].y)/6,f[2].x,f[2].y])}return c}}(window,document,a),function(a,b,c){"use strict";c.EventEmitter=function(){function a(a,b){d[a]=d[a]||[],d[a].push(b)}function b(a,b){d[a]&&(b?(d[a].splice(d[a].indexOf(b),1),0===d[a].length&&delete d[a]):delete d[a])}function c(a,b){d[a]&&d[a].forEach(function(a){a(b)}),d["*"]&&d["*"].forEach(function(c){c(a,b)})}var d=[];return{addEventHandler:a,removeEventHandler:b,emit:c}}}(window,document,a),function(a,b,c){"use strict";function d(a){var b=[];if(a.length)for(var c=0;c<a.length;c++)b.push(a[c]);return b}function e(a,b){var d=b||this.prototype||c.Class,e=Object.create(d);c.Class.cloneDefinitions(e,a);var f=function(){var a,b=e.constructor||function(){};return a=this===c?Object.create(e):this,b.apply(a,Array.prototype.slice.call(arguments,0)),a};return f.prototype=e,f.super=d,f.extend=this.extend,f}function f(a,b){if(this!==c.Class)throw new Error("Chartist.Class.mix should only be called on the type and never on an instance!");var d=[{}].concat(a).map(function(a){return a instanceof Function?a.prototype:a}),e=c.Class.cloneDefinitions.apply(void 0,d);return delete e.constructor,this.extend(b,e)}function g(){var a=d(arguments),b=a[0];return a.splice(1,a.length-1).forEach(function(a){Object.getOwnPropertyNames(a).forEach(function(c){delete b[c],Object.defineProperty(b,c,Object.getOwnPropertyDescriptor(a,c))})}),b}c.Class={extend:e,mix:f,cloneDefinitions:g}}(window,document,a),function(a,b,c){"use strict";function d(){return this.createChart(this.optionsProvider.currentOptions),this}function e(){return a.removeEventListener("resize",this.resizeListener),this.optionsProvider.removeMediaQueryListeners(),this}function f(a,b){return this.eventEmitter.addEventHandler(a,b),this}function g(a,b){return this.eventEmitter.removeEventHandler(a,b),this}function h(b,d,e,f){this.container=c.querySelector(b),this.data=d,this.options=e,this.responsiveOptions=f,this.eventEmitter=c.EventEmitter(),this.supportsForeignObject=c.Svg.isSupported("Extensibility"),this.supportsAnimations=c.Svg.isSupported("AnimationEventsAttribute"),this.resizeListener=function(){this.update()}.bind(this),this.container&&(this.container.__chartist__&&this.container.__chartist__.detach(),this.container.__chartist__=this),a.addEventListener("resize",this.resizeListener),setTimeout(function(){this.optionsProvider=c.optionsProvider(this.options,this.responsiveOptions,this.eventEmitter),this.options.plugins&&this.options.plugins.forEach(function(a){a instanceof Array?a[0](this,a[1]):a(this)}.bind(this)),this.createChart(this.optionsProvider.currentOptions)}.bind(this),0)}c.Base=c.Class.extend({constructor:h,optionsProvider:void 0,container:void 0,svg:void 0,eventEmitter:void 0,createChart:function(){throw new Error("Base chart type can't be instantiated!")},update:d,detach:e,on:f,off:g,version:c.version,supportsForeignObject:!1})}(window,document,a),function(a,b,c){"use strict";function d(a,d,e,f,g){a instanceof SVGElement?this._node=a:(this._node=b.createElementNS(y,a),"svg"===a&&this._node.setAttributeNS(z,c.xmlNs.qualifiedName,c.xmlNs.uri),d&&this.attr(d),e&&this.addClass(e),f&&(g&&f._node.firstChild?f._node.insertBefore(this._node,f._node.firstChild):f._node.appendChild(this._node)))}function e(a,b){return"string"==typeof a?b?this._node.getAttributeNS(b,a):this._node.getAttribute(a):(Object.keys(a).forEach(function(d){void 0!==a[d]&&(b?this._node.setAttributeNS(b,[c.xmlNs.prefix,":",d].join(""),a[d]):this._node.setAttribute(d,a[d]))}.bind(this)),this)}function f(a,b,d,e){return new c.Svg(a,b,d,this,e)}function g(){return this._node.parentNode instanceof SVGElement?new c.Svg(this._node.parentNode):null}function h(){for(var a=this._node;"svg"!==a.nodeName;)a=a.parentNode;return new c.Svg(a)}function i(a){var b=this._node.querySelector(a);return b?new c.Svg(b):null}function j(a){var b=this._node.querySelectorAll(a);return b.length?new c.Svg.List(b):null}function k(a,c,d,e){if("string"==typeof a){var f=b.createElement("div");f.innerHTML=a,a=f.firstChild}a.setAttribute("xmlns",A);var g=this.elem("foreignObject",c,d,e);return g._node.appendChild(a),g}function l(a){return this._node.appendChild(b.createTextNode(a)),this}function m(){for(;this._node.firstChild;)this._node.removeChild(this._node.firstChild);return this}function n(){return this._node.parentNode.removeChild(this._node),new c.Svg(this._node.parentNode)}function o(a){return this._node.parentNode.replaceChild(a._node,this._node),a}function p(a,b){return b&&this._node.firstChild?this._node.insertBefore(a._node,this._node.firstChild):this._node.appendChild(a._node),this}function q(){return this._node.getAttribute("class")?this._node.getAttribute("class").trim().split(/\s+/):[]}function r(a){return this._node.setAttribute("class",this.classes(this._node).concat(a.trim().split(/\s+/)).filter(function(a,b,c){return c.indexOf(a)===b}).join(" ")),this}function s(a){var b=a.trim().split(/\s+/);return this._node.setAttribute("class",this.classes(this._node).filter(function(a){return-1===b.indexOf(a)}).join(" ")),this}function t(){return this._node.setAttribute("class",""),this}function u(){return this._node.clientHeight||Math.round(this._node.getBBox().height)||this._node.parentNode.clientHeight}function v(){return this._node.clientWidth||Math.round(this._node.getBBox().width)||this._node.parentNode.clientWidth}function w(a,b,d){return void 0===b&&(b=!0),Object.keys(a).forEach(function(e){function f(a,b){var f,g,h,i={};a.easing&&(h=a.easing instanceof Array?a.easing:c.Svg.Easing[a.easing],delete a.easing),a.begin=c.ensureUnit(a.begin,"ms"),a.dur=c.ensureUnit(a.dur,"ms"),h&&(a.calcMode="spline",a.keySplines=h.join(" "),a.keyTimes="0;1"),b&&(a.fill="freeze",i[e]=a.from,this.attr(i),g=c.stripUnit(a.begin||0),a.begin="indefinite"),f=this.elem("animate",c.extend({attributeName:e},a)),b&&setTimeout(function(){f._node.beginElement()},g),d&&f._node.addEventListener("beginEvent",function(){d.emit("animationBegin",{element:this,animate:f._node,params:a})}.bind(this)),f._node.addEventListener("endEvent",function(){d&&d.emit("animationEnd",{element:this,animate:f._node,params:a}),b&&(i[e]=a.to,this.attr(i),f.remove())}.bind(this))}a[e]instanceof Array?a[e].forEach(function(a){f.bind(this)(a,!1)}.bind(this)):f.bind(this)(a[e],b)}.bind(this)),this}function x(a){var b=this;this.svgElements=[];for(var d=0;d<a.length;d++)this.svgElements.push(new c.Svg(a[d]));Object.keys(c.Svg.prototype).filter(function(a){return-1===["constructor","parent","querySelector","querySelectorAll","replace","append","classes","height","width"].indexOf(a)}).forEach(function(a){b[a]=function(){var d=Array.prototype.slice.call(arguments,0);return b.svgElements.forEach(function(b){c.Svg.prototype[a].apply(b,d)}),b}})}var y="http://www.w3.org/2000/svg",z="http://www.w3.org/2000/xmlns/",A="http://www.w3.org/1999/xhtml";c.xmlNs={qualifiedName:"xmlns:ct",prefix:"ct",uri:"http://gionkunz.github.com/chartist-js/ct"},c.Svg=c.Class.extend({constructor:d,attr:e,elem:f,parent:g,root:h,querySelector:i,querySelectorAll:j,foreignObject:k,text:l,empty:m,remove:n,replace:o,append:p,classes:q,addClass:r,removeClass:s,removeAllClasses:t,height:u,width:v,animate:w}),c.Svg.isSupported=function(a){return b.implementation.hasFeature("www.http://w3.org/TR/SVG11/feature#"+a,"1.1")};var B={easeInSine:[.47,0,.745,.715],easeOutSine:[.39,.575,.565,1],easeInOutSine:[.445,.05,.55,.95],easeInQuad:[.55,.085,.68,.53],easeOutQuad:[.25,.46,.45,.94],easeInOutQuad:[.455,.03,.515,.955],easeInCubic:[.55,.055,.675,.19],easeOutCubic:[.215,.61,.355,1],easeInOutCubic:[.645,.045,.355,1],easeInQuart:[.895,.03,.685,.22],easeOutQuart:[.165,.84,.44,1],easeInOutQuart:[.77,0,.175,1],easeInQuint:[.755,.05,.855,.06],easeOutQuint:[.23,1,.32,1],easeInOutQuint:[.86,0,.07,1],easeInExpo:[.95,.05,.795,.035],easeOutExpo:[.19,1,.22,1],easeInOutExpo:[1,0,0,1],easeInCirc:[.6,.04,.98,.335],easeOutCirc:[.075,.82,.165,1],easeInOutCirc:[.785,.135,.15,.86],easeInBack:[.6,-.28,.735,.045],easeOutBack:[.175,.885,.32,1.275],easeInOutBack:[.68,-.55,.265,1.55]};c.Svg.Easing=B,c.Svg.List=c.Class.extend({constructor:x})}(window,document,a),function(a,b,c){"use strict";function d(a){var b,d=[],e=c.normalizeDataArray(c.getDataArray(this.data),this.data.labels.length);this.svg=c.createSvg(this.container,a.width,a.height,a.classNames.chart),b=c.getBounds(this.svg,e,a);var f=c.createChartRect(this.svg,a),g=this.svg.elem("g").addClass(a.classNames.labelGroup),h=this.svg.elem("g").addClass(a.classNames.gridGroup);c.createXAxis(f,this.data,h,g,a,this.eventEmitter,this.supportsForeignObject),c.createYAxis(f,b,h,g,a,this.eventEmitter,this.supportsForeignObject);for(var i=0;i<this.data.series.length;i++){d[i]=this.svg.elem("g"),this.data.series[i].name&&d[i].attr({"series-name":this.data.series[i].name},c.xmlNs.uri),d[i].addClass([a.classNames.series,this.data.series[i].className||a.classNames.series+"-"+c.alphaNumerate(i)].join(" "));for(var j,k,l=[],m=0;m<e[i].length;m++)j=c.projectPoint(f,b,e[i],m),l.push(j.x,j.y),a.showPoint&&(k=d[i].elem("line",{x1:j.x,y1:j.y,x2:j.x+.01,y2:j.y},a.classNames.point).attr({value:e[i][m]},c.xmlNs.uri),this.eventEmitter.emit("draw",{type:"point",value:e[i][m],index:m,group:d[i],element:k,x:j.x,y:j.y}));if(a.showLine||a.showArea){var n=["M"+l[0]+","+l[1]];if(a.lineSmooth&&l.length>4)for(var o=c.catmullRom2bezier(l),p=0;p<o.length;p++)n.push("C"+o[p].join());else for(var q=3;q<l.length;q+=2)n.push("L"+l[q-1]+","+l[q]);if(a.showArea){var r=Math.max(Math.min(a.areaBase,b.max),b.min),s=n.slice(),t=c.projectPoint(f,b,[r],0);s.splice(0,0,"M"+t.x+","+t.y),s[1]="L"+l[0]+","+l[1],s.push("L"+l[l.length-2]+","+t.y);var u=d[i].elem("path",{d:s.join("")},a.classNames.area,!0).attr({values:e[i]},c.xmlNs.uri);this.eventEmitter.emit("draw",{type:"area",values:e[i],index:i,group:d[i],element:u})}if(a.showLine){var v=d[i].elem("path",{d:n.join("")},a.classNames.line,!0).attr({values:e[i]},c.xmlNs.uri);this.eventEmitter.emit("draw",{type:"line",values:e[i],index:i,group:d[i],element:v})}}}this.eventEmitter.emit("created",{bounds:b,chartRect:f,svg:this.svg,options:a})}function e(a,b,d,e){c.Line.super.constructor.call(this,a,b,c.extend({},f,d),e)}var f={axisX:{offset:30,labelOffset:{x:0,y:0},showLabel:!0,showGrid:!0,labelInterpolationFnc:c.noop},axisY:{offset:40,labelOffset:{x:0,y:0},showLabel:!0,showGrid:!0,labelInterpolationFnc:c.noop,scaleMinSpace:20},width:void 0,height:void 0,showLine:!0,showPoint:!0,showArea:!1,areaBase:0,lineSmooth:!0,low:void 0,high:void 0,chartPadding:5,classNames:{chart:"ct-chart-line",label:"ct-label",labelGroup:"ct-labels",series:"ct-series",line:"ct-line",point:"ct-point",area:"ct-area",grid:"ct-grid",gridGroup:"ct-grids",vertical:"ct-vertical",horizontal:"ct-horizontal"}};c.Line=c.Base.extend({constructor:e,createChart:d})}(window,document,a),function(a,b,c){"use strict";function d(a){var b,d=[],e=c.normalizeDataArray(c.getDataArray(this.data),this.data.labels.length);this.svg=c.createSvg(this.container,a.width,a.height,a.classNames.chart),b=c.getBounds(this.svg,e,a,0);var f=c.createChartRect(this.svg,a),g=this.svg.elem("g").addClass(a.classNames.labelGroup),h=this.svg.elem("g").addClass(a.classNames.gridGroup),i=c.projectPoint(f,b,[0],0);c.createXAxis(f,this.data,h,g,a,this.eventEmitter,this.supportsForeignObject),c.createYAxis(f,b,h,g,a,this.eventEmitter,this.supportsForeignObject);for(var j=0;j<this.data.series.length;j++){var k=j-(this.data.series.length-1)/2,l=f.width()/e[j].length/2;d[j]=this.svg.elem("g"),this.data.series[j].name&&d[j].attr({"series-name":this.data.series[j].name},c.xmlNs.uri),d[j].addClass([a.classNames.series,this.data.series[j].className||a.classNames.series+"-"+c.alphaNumerate(j)].join(" "));for(var m=0;m<e[j].length;m++){var n,o=c.projectPoint(f,b,e[j],m);o.x+=l+k*a.seriesBarDistance,n=d[j].elem("line",{x1:o.x,y1:i.y,x2:o.x,y2:o.y},a.classNames.bar).attr({value:e[j][m]},c.xmlNs.uri),this.eventEmitter.emit("draw",{type:"bar",value:e[j][m],index:m,group:d[j],element:n,x1:o.x,y1:i.y,x2:o.x,y2:o.y})}}this.eventEmitter.emit("created",{bounds:b,chartRect:f,svg:this.svg,options:a})}function e(a,b,d,e){c.Bar.super.constructor.call(this,a,b,c.extend({},f,d),e)}var f={axisX:{offset:30,labelOffset:{x:0,y:0},showLabel:!0,showGrid:!0,labelInterpolationFnc:c.noop},axisY:{offset:40,labelOffset:{x:0,y:0},showLabel:!0,showGrid:!0,labelInterpolationFnc:c.noop,scaleMinSpace:20},width:void 0,height:void 0,high:void 0,low:void 0,chartPadding:5,seriesBarDistance:15,classNames:{chart:"ct-chart-bar",label:"ct-label",labelGroup:"ct-labels",series:"ct-series",bar:"ct-bar",grid:"ct-grid",gridGroup:"ct-grids",vertical:"ct-vertical",horizontal:"ct-horizontal"}};c.Bar=c.Base.extend({constructor:e,createChart:d})}(window,document,a),function(a,b,c){"use strict";function d(a,b,c){var d=b.x>a.x;return d&&"explode"===c||!d&&"implode"===c?"start":d&&"implode"===c||!d&&"explode"===c?"end":"middle"}function e(a){var b,e,f,g,h=[],i=a.startAngle,j=c.getDataArray(this.data);this.svg=c.createSvg(this.container,a.width,a.height,a.classNames.chart),b=c.createChartRect(this.svg,a,0,0),e=Math.min(b.width()/2,b.height()/2),g=a.total||j.reduce(function(a,b){return a+b},0),e-=a.donut?a.donutWidth/2:0,f=a.donut?e:e/2,f+=a.labelOffset;for(var k={x:b.x1+b.width()/2,y:b.y2+b.height()/2},l=1===this.data.series.filter(function(a){return 0!==a}).length,m=0;m<this.data.series.length;m++){h[m]=this.svg.elem("g",null,null,!0),this.data.series[m].name&&h[m].attr({"series-name":this.data.series[m].name},c.xmlNs.uri),h[m].addClass([a.classNames.series,this.data.series[m].className||a.classNames.series+"-"+c.alphaNumerate(m)].join(" "));var n=i+j[m]/g*360;n-i===360&&(n-=.01);var o=c.polarToCartesian(k.x,k.y,e,i-(0===m||l?0:.2)),p=c.polarToCartesian(k.x,k.y,e,n),q=180>=n-i?"0":"1",r=["M",p.x,p.y,"A",e,e,0,q,0,o.x,o.y];a.donut===!1&&r.push("L",k.x,k.y);var s=h[m].elem("path",{d:r.join(" ")},a.classNames.slice+(a.donut?" "+a.classNames.donut:""));if(s.attr({value:j[m]},c.xmlNs.uri),a.donut===!0&&s.attr({style:"stroke-width: "+ +a.donutWidth+"px"}),this.eventEmitter.emit("draw",{type:"slice",value:j[m],totalDataSum:g,index:m,group:h[m],element:s,center:k,radius:e,startAngle:i,endAngle:n}),a.showLabel){var t=c.polarToCartesian(k.x,k.y,f,i+(n-i)/2),u=a.labelInterpolationFnc(this.data.labels?this.data.labels[m]:j[m],m),v=h[m].elem("text",{dx:t.x,dy:t.y,"text-anchor":d(k,t,a.labelDirection)},a.classNames.label).text(""+u);this.eventEmitter.emit("draw",{type:"label",index:m,group:h[m],element:v,text:""+u,x:t.x,y:t.y})}i=n}this.eventEmitter.emit("created",{chartRect:b,svg:this.svg,options:a})}function f(a,b,d,e){c.Pie.super.constructor.call(this,a,b,c.extend({},g,d),e)}var g={width:void 0,height:void 0,chartPadding:5,classNames:{chart:"ct-chart-pie",series:"ct-series",slice:"ct-slice",donut:"ct-donut",label:"ct-label"},startAngle:0,total:void 0,donut:!1,donutWidth:60,showLabel:!0,labelOffset:0,labelInterpolationFnc:c.noop,labelOverflow:!1,labelDirection:"neutral"};c.Pie=c.Base.extend({constructor:f,createChart:e,determineAnchorPosition:d})}(window,document,a),a});
+!function(a,b){"function"==typeof define&&define.amd?define([],function(){return a.returnExportsGlobal=b()}):"object"==typeof exports?module.exports=b():a.Chartist=b()}(this,function(){var a={version:"0.4.4"};return function(a,b,c){"use strict";c.noop=function(a){return a},c.alphaNumerate=function(a){return String.fromCharCode(97+a%26)},c.extend=function(a){a=a||{};var b=Array.prototype.slice.call(arguments,1);return b.forEach(function(b){for(var d in b)a[d]="object"!=typeof b[d]||b[d]instanceof Array?b[d]:c.extend(a[d],b[d])}),a},c.stripUnit=function(a){return"string"==typeof a&&(a=a.replace(/[^0-9\+-\.]/g,"")),+a},c.ensureUnit=function(a,b){return"number"==typeof a&&(a+=b),a},c.querySelector=function(a){return a instanceof Node?a:b.querySelector(a)},c.createSvg=function(a,b,d,e){var f;return b=b||"100%",d=d||"100%",f=a.querySelector("svg"),f&&a.removeChild(f),f=new c.Svg("svg").attr({width:b,height:d}).addClass(e).attr({style:"width: "+b+"; height: "+d+";"}),a.appendChild(f._node),f},c.getDataArray=function(a){for(var b=[],c=0;c<a.series.length;c++){b[c]="object"==typeof a.series[c]&&void 0!==a.series[c].data?a.series[c].data:a.series[c];for(var d=0;d<b[c].length;d++)b[c][d]=+b[c][d]}return b},c.normalizeDataArray=function(a,b){for(var c=0;c<a.length;c++)if(a[c].length!==b)for(var d=a[c].length;b>d;d++)a[c][d]=0;return a},c.orderOfMagnitude=function(a){return Math.floor(Math.log(Math.abs(a))/Math.LN10)},c.projectLength=function(a,b,d,e){var f=c.getAvailableHeight(a,e);return b/d.range*f},c.getAvailableHeight=function(a,b){return Math.max((c.stripUnit(b.height)||a.height())-2*b.chartPadding-b.axisX.offset,0)},c.getHighLow=function(a){var b,c,d={high:-Number.MAX_VALUE,low:Number.MAX_VALUE};for(b=0;b<a.length;b++)for(c=0;c<a[b].length;c++)a[b][c]>d.high&&(d.high=a[b][c]),a[b][c]<d.low&&(d.low=a[b][c]);return d},c.getBounds=function(a,b,d,e){var f,g,h,i=c.getHighLow(b);i.high=+d.high||(0===d.high?0:i.high),i.low=+d.low||(0===d.low?0:i.low),i.high===i.low&&(0===i.low?i.high=1:i.low<0?i.high=0:i.low=0),(e||0===e)&&(i.high=Math.max(e,i.high),i.low=Math.min(e,i.low)),i.valueRange=i.high-i.low,i.oom=c.orderOfMagnitude(i.valueRange),i.min=Math.floor(i.low/Math.pow(10,i.oom))*Math.pow(10,i.oom),i.max=Math.ceil(i.high/Math.pow(10,i.oom))*Math.pow(10,i.oom),i.range=i.max-i.min,i.step=Math.pow(10,i.oom),i.numberOfSteps=Math.round(i.range/i.step);for(var j=c.projectLength(a,i.step,i,d),k=j<d.axisY.scaleMinSpace;;)if(k&&c.projectLength(a,i.step,i,d)<=d.axisY.scaleMinSpace)i.step*=2;else{if(k||!(c.projectLength(a,i.step/2,i,d)>=d.axisY.scaleMinSpace))break;i.step/=2}for(g=i.min,h=i.max,f=i.min;f<=i.max;f+=i.step)f+i.step<i.low&&(g+=i.step),f-i.step>=i.high&&(h-=i.step);for(i.min=g,i.max=h,i.range=i.max-i.min,i.values=[],f=i.min;f<=i.max;f+=i.step)i.values.push(f);return i},c.polarToCartesian=function(a,b,c,d){var e=(d-90)*Math.PI/180;return{x:a+c*Math.cos(e),y:b+c*Math.sin(e)}},c.createChartRect=function(a,b){var d=b.axisY?b.axisY.offset:0,e=b.axisX?b.axisX.offset:0;return{x1:b.chartPadding+d,y1:Math.max((c.stripUnit(b.height)||a.height())-b.chartPadding-e,b.chartPadding),x2:Math.max((c.stripUnit(b.width)||a.width())-b.chartPadding,b.chartPadding+d),y2:b.chartPadding,width:function(){return this.x2-this.x1},height:function(){return this.y1-this.y2}}},c.createLabel=function(a,b,c,d,e){if(e){var f='<span class="'+d+'">'+b+"</span>";return a.foreignObject(f,c)}return a.elem("text",c,d).text(b)},c.createXAxis=function(b,d,e,f,g,h,i){d.labels.forEach(function(j,k){var l=g.axisX.labelInterpolationFnc(j,k),m=b.width()/d.labels.length,n=g.axisX.offset,o=b.x1+m*k;if(l||0===l){if(g.axisX.showGrid){var p=e.elem("line",{x1:o,y1:b.y1,x2:o,y2:b.y2},[g.classNames.grid,g.classNames.horizontal].join(" "));h.emit("draw",{type:"grid",axis:"x",index:k,group:e,element:p,x1:o,y1:b.y1,x2:o,y2:b.y2})}if(g.axisX.showLabel){var q={x:o+g.axisX.labelOffset.x,y:b.y1+g.axisX.labelOffset.y+(i?5:20)},r=c.createLabel(f,""+l,{x:q.x,y:q.y,width:m,height:n,style:"overflow: visible;"},[g.classNames.label,g.classNames.horizontal].join(" "),i);h.emit("draw",{type:"label",axis:"x",index:k,group:f,element:r,text:""+l,x:q.x,y:q.y,width:m,height:n,get space(){return a.console.warn("EventEmitter: space is deprecated, use width or height instead."),this.width}})}}})},c.createYAxis=function(b,d,e,f,g,h,i){d.values.forEach(function(j,k){var l=g.axisY.labelInterpolationFnc(j,k),m=g.axisY.offset,n=b.height()/d.values.length,o=b.y1-n*k;if(l||0===l){if(g.axisY.showGrid){var p=e.elem("line",{x1:b.x1,y1:o,x2:b.x2,y2:o},[g.classNames.grid,g.classNames.vertical].join(" "));h.emit("draw",{type:"grid",axis:"y",index:k,group:e,element:p,x1:b.x1,y1:o,x2:b.x2,y2:o})}if(g.axisY.showLabel){var q={x:g.chartPadding+g.axisY.labelOffset.x+(i?-10:0),y:o+g.axisY.labelOffset.y+(i?-15:0)},r=c.createLabel(f,""+l,{x:q.x,y:q.y,width:m,height:n,style:"overflow: visible;"},[g.classNames.label,g.classNames.vertical].join(" "),i);h.emit("draw",{type:"label",axis:"y",index:k,group:f,element:r,text:""+l,x:q.x,y:q.y,width:m,height:n,get space(){return a.console.warn("EventEmitter: space is deprecated, use width or height instead."),this.height}})}}})},c.projectPoint=function(a,b,c,d){return{x:a.x1+a.width()/c.length*d,y:a.y1-a.height()*(c[d]-b.min)/(b.range+b.step)}},c.optionsProvider=function(b,d,e){function f(){var b=h;if(h=c.extend({},j),d)for(i=0;i<d.length;i++){var f=a.matchMedia(d[i][0]);f.matches&&(h=c.extend(h,d[i][1]))}e&&e.emit("optionsChanged",{previousOptions:b,currentOptions:h})}function g(){k.forEach(function(a){a.removeListener(f)})}var h,i,j=c.extend({},b),k=[];if(!a.matchMedia)throw"window.matchMedia not found! Make sure you're using a polyfill.";if(d)for(i=0;i<d.length;i++){var l=a.matchMedia(d[i][0]);l.addListener(f),k.push(l)}return f(),{get currentOptions(){return c.extend({},h)},removeMediaQueryListeners:g}},c.catmullRom2bezier=function(a,b){for(var c=[],d=0,e=a.length;e-2*!b>d;d+=2){var f=[{x:+a[d-2],y:+a[d-1]},{x:+a[d],y:+a[d+1]},{x:+a[d+2],y:+a[d+3]},{x:+a[d+4],y:+a[d+5]}];b?d?e-4===d?f[3]={x:+a[0],y:+a[1]}:e-2===d&&(f[2]={x:+a[0],y:+a[1]},f[3]={x:+a[2],y:+a[3]}):f[0]={x:+a[e-2],y:+a[e-1]}:e-4===d?f[3]=f[2]:d||(f[0]={x:+a[d],y:+a[d+1]}),c.push([(-f[0].x+6*f[1].x+f[2].x)/6,(-f[0].y+6*f[1].y+f[2].y)/6,(f[1].x+6*f[2].x-f[3].x)/6,(f[1].y+6*f[2].y-f[3].y)/6,f[2].x,f[2].y])}return c}}(window,document,a),function(a,b,c){"use strict";c.EventEmitter=function(){function a(a,b){d[a]=d[a]||[],d[a].push(b)}function b(a,b){d[a]&&(b?(d[a].splice(d[a].indexOf(b),1),0===d[a].length&&delete d[a]):delete d[a])}function c(a,b){d[a]&&d[a].forEach(function(a){a(b)}),d["*"]&&d["*"].forEach(function(c){c(a,b)})}var d=[];return{addEventHandler:a,removeEventHandler:b,emit:c}}}(window,document,a),function(a,b,c){"use strict";function d(a){var b=[];if(a.length)for(var c=0;c<a.length;c++)b.push(a[c]);return b}function e(a,b){var d=b||this.prototype||c.Class,e=Object.create(d);c.Class.cloneDefinitions(e,a);var f=function(){var a,b=e.constructor||function(){};return a=this===c?Object.create(e):this,b.apply(a,Array.prototype.slice.call(arguments,0)),a};return f.prototype=e,f.super=d,f.extend=this.extend,f}function f(a,b){if(this!==c.Class)throw new Error("Chartist.Class.mix should only be called on the type and never on an instance!");var d=[{}].concat(a).map(function(a){return a instanceof Function?a.prototype:a}),e=c.Class.cloneDefinitions.apply(void 0,d);return delete e.constructor,this.extend(b,e)}function g(){var a=d(arguments),b=a[0];return a.splice(1,a.length-1).forEach(function(a){Object.getOwnPropertyNames(a).forEach(function(c){delete b[c],Object.defineProperty(b,c,Object.getOwnPropertyDescriptor(a,c))})}),b}c.Class={extend:e,mix:f,cloneDefinitions:g}}(window,document,a),function(a,b,c){"use strict";function d(){return this.createChart(this.optionsProvider.currentOptions),this}function e(){return a.removeEventListener("resize",this.resizeListener),this.optionsProvider.removeMediaQueryListeners(),this}function f(a,b){return this.eventEmitter.addEventHandler(a,b),this}function g(a,b){return this.eventEmitter.removeEventHandler(a,b),this}function h(b,d,e,f){this.container=c.querySelector(b),this.data=d,this.options=e,this.responsiveOptions=f,this.eventEmitter=c.EventEmitter(),this.supportsForeignObject=c.Svg.isSupported("Extensibility"),this.supportsAnimations=c.Svg.isSupported("AnimationEventsAttribute"),this.resizeListener=function(){this.update()}.bind(this),this.container&&(this.container.__chartist__&&this.container.__chartist__.detach(),this.container.__chartist__=this),a.addEventListener("resize",this.resizeListener),setTimeout(function(){this.optionsProvider=c.optionsProvider(this.options,this.responsiveOptions,this.eventEmitter),this.options.plugins&&this.options.plugins.forEach(function(a){a instanceof Array?a[0](this,a[1]):a(this)}.bind(this)),this.createChart(this.optionsProvider.currentOptions)}.bind(this),0)}c.Base=c.Class.extend({constructor:h,optionsProvider:void 0,container:void 0,svg:void 0,eventEmitter:void 0,createChart:function(){throw new Error("Base chart type can't be instantiated!")},update:d,detach:e,on:f,off:g,version:c.version,supportsForeignObject:!1})}(window,document,a),function(a,b,c){"use strict";function d(a,d,e,f,g){a instanceof SVGElement?this._node=a:(this._node=b.createElementNS(y,a),"svg"===a&&this._node.setAttributeNS(z,c.xmlNs.qualifiedName,c.xmlNs.uri),d&&this.attr(d),e&&this.addClass(e),f&&(g&&f._node.firstChild?f._node.insertBefore(this._node,f._node.firstChild):f._node.appendChild(this._node)))}function e(a,b){return"string"==typeof a?b?this._node.getAttributeNS(b,a):this._node.getAttribute(a):(Object.keys(a).forEach(function(d){void 0!==a[d]&&(b?this._node.setAttributeNS(b,[c.xmlNs.prefix,":",d].join(""),a[d]):this._node.setAttribute(d,a[d]))}.bind(this)),this)}function f(a,b,d,e){return new c.Svg(a,b,d,this,e)}function g(){return this._node.parentNode instanceof SVGElement?new c.Svg(this._node.parentNode):null}function h(){for(var a=this._node;"svg"!==a.nodeName;)a=a.parentNode;return new c.Svg(a)}function i(a){var b=this._node.querySelector(a);return b?new c.Svg(b):null}function j(a){var b=this._node.querySelectorAll(a);return b.length?new c.Svg.List(b):null}function k(a,c,d,e){if("string"==typeof a){var f=b.createElement("div");f.innerHTML=a,a=f.firstChild}a.setAttribute("xmlns",A);var g=this.elem("foreignObject",c,d,e);return g._node.appendChild(a),g}function l(a){return this._node.appendChild(b.createTextNode(a)),this}function m(){for(;this._node.firstChild;)this._node.removeChild(this._node.firstChild);return this}function n(){return this._node.parentNode.removeChild(this._node),this.parent()}function o(a){return this._node.parentNode.replaceChild(a._node,this._node),a}function p(a,b){return b&&this._node.firstChild?this._node.insertBefore(a._node,this._node.firstChild):this._node.appendChild(a._node),this}function q(){return this._node.getAttribute("class")?this._node.getAttribute("class").trim().split(/\s+/):[]}function r(a){return this._node.setAttribute("class",this.classes(this._node).concat(a.trim().split(/\s+/)).filter(function(a,b,c){return c.indexOf(a)===b}).join(" ")),this}function s(a){var b=a.trim().split(/\s+/);return this._node.setAttribute("class",this.classes(this._node).filter(function(a){return-1===b.indexOf(a)}).join(" ")),this}function t(){return this._node.setAttribute("class",""),this}function u(){return this._node.clientHeight||Math.round(this._node.getBBox().height)||this._node.parentNode.clientHeight}function v(){return this._node.clientWidth||Math.round(this._node.getBBox().width)||this._node.parentNode.clientWidth}function w(a,b,d){return void 0===b&&(b=!0),Object.keys(a).forEach(function(e){function f(a,b){var f,g,h,i={};a.easing&&(h=a.easing instanceof Array?a.easing:c.Svg.Easing[a.easing],delete a.easing),a.begin=c.ensureUnit(a.begin,"ms"),a.dur=c.ensureUnit(a.dur,"ms"),h&&(a.calcMode="spline",a.keySplines=h.join(" "),a.keyTimes="0;1"),b&&(a.fill="freeze",i[e]=a.from,this.attr(i),g=c.stripUnit(a.begin||0),a.begin="indefinite"),f=this.elem("animate",c.extend({attributeName:e},a)),b&&setTimeout(function(){try{f._node.beginElement()}catch(b){i[e]=a.to,this.attr(i),f.remove()}}.bind(this),g),d&&f._node.addEventListener("beginEvent",function(){d.emit("animationBegin",{element:this,animate:f._node,params:a})}.bind(this)),f._node.addEventListener("endEvent",function(){d&&d.emit("animationEnd",{element:this,animate:f._node,params:a}),b&&(i[e]=a.to,this.attr(i),f.remove())}.bind(this))}a[e]instanceof Array?a[e].forEach(function(a){f.bind(this)(a,!1)}.bind(this)):f.bind(this)(a[e],b)}.bind(this)),this}function x(a){var b=this;this.svgElements=[];for(var d=0;d<a.length;d++)this.svgElements.push(new c.Svg(a[d]));Object.keys(c.Svg.prototype).filter(function(a){return-1===["constructor","parent","querySelector","querySelectorAll","replace","append","classes","height","width"].indexOf(a)}).forEach(function(a){b[a]=function(){var d=Array.prototype.slice.call(arguments,0);return b.svgElements.forEach(function(b){c.Svg.prototype[a].apply(b,d)}),b}})}var y="http://www.w3.org/2000/svg",z="http://www.w3.org/2000/xmlns/",A="http://www.w3.org/1999/xhtml";c.xmlNs={qualifiedName:"xmlns:ct",prefix:"ct",uri:"http://gionkunz.github.com/chartist-js/ct"},c.Svg=c.Class.extend({constructor:d,attr:e,elem:f,parent:g,root:h,querySelector:i,querySelectorAll:j,foreignObject:k,text:l,empty:m,remove:n,replace:o,append:p,classes:q,addClass:r,removeClass:s,removeAllClasses:t,height:u,width:v,animate:w}),c.Svg.isSupported=function(a){return b.implementation.hasFeature("www.http://w3.org/TR/SVG11/feature#"+a,"1.1")};var B={easeInSine:[.47,0,.745,.715],easeOutSine:[.39,.575,.565,1],easeInOutSine:[.445,.05,.55,.95],easeInQuad:[.55,.085,.68,.53],easeOutQuad:[.25,.46,.45,.94],easeInOutQuad:[.455,.03,.515,.955],easeInCubic:[.55,.055,.675,.19],easeOutCubic:[.215,.61,.355,1],easeInOutCubic:[.645,.045,.355,1],easeInQuart:[.895,.03,.685,.22],easeOutQuart:[.165,.84,.44,1],easeInOutQuart:[.77,0,.175,1],easeInQuint:[.755,.05,.855,.06],easeOutQuint:[.23,1,.32,1],easeInOutQuint:[.86,0,.07,1],easeInExpo:[.95,.05,.795,.035],easeOutExpo:[.19,1,.22,1],easeInOutExpo:[1,0,0,1],easeInCirc:[.6,.04,.98,.335],easeOutCirc:[.075,.82,.165,1],easeInOutCirc:[.785,.135,.15,.86],easeInBack:[.6,-.28,.735,.045],easeOutBack:[.175,.885,.32,1.275],easeInOutBack:[.68,-.55,.265,1.55]};c.Svg.Easing=B,c.Svg.List=c.Class.extend({constructor:x})}(window,document,a),function(a,b,c){"use strict";function d(a){var b,d=[],e=c.normalizeDataArray(c.getDataArray(this.data),this.data.labels.length);this.svg=c.createSvg(this.container,a.width,a.height,a.classNames.chart),b=c.getBounds(this.svg,e,a);var f=c.createChartRect(this.svg,a),g=this.svg.elem("g").addClass(a.classNames.labelGroup),h=this.svg.elem("g").addClass(a.classNames.gridGroup);c.createXAxis(f,this.data,h,g,a,this.eventEmitter,this.supportsForeignObject),c.createYAxis(f,b,h,g,a,this.eventEmitter,this.supportsForeignObject);for(var i=0;i<this.data.series.length;i++){d[i]=this.svg.elem("g"),this.data.series[i].name&&d[i].attr({"series-name":this.data.series[i].name},c.xmlNs.uri),d[i].addClass([a.classNames.series,this.data.series[i].className||a.classNames.series+"-"+c.alphaNumerate(i)].join(" "));for(var j,k,l=[],m=0;m<e[i].length;m++)j=c.projectPoint(f,b,e[i],m),l.push(j.x,j.y),a.showPoint&&(k=d[i].elem("line",{x1:j.x,y1:j.y,x2:j.x+.01,y2:j.y},a.classNames.point).attr({value:e[i][m]},c.xmlNs.uri),this.eventEmitter.emit("draw",{type:"point",value:e[i][m],index:m,group:d[i],element:k,x:j.x,y:j.y}));if(a.showLine||a.showArea){var n=["M"+l[0]+","+l[1]];if(a.lineSmooth&&l.length>4)for(var o=c.catmullRom2bezier(l),p=0;p<o.length;p++)n.push("C"+o[p].join());else for(var q=3;q<l.length;q+=2)n.push("L"+l[q-1]+","+l[q]);if(a.showArea){var r=Math.max(Math.min(a.areaBase,b.max),b.min),s=n.slice(),t=c.projectPoint(f,b,[r],0);s.splice(0,0,"M"+t.x+","+t.y),s[1]="L"+l[0]+","+l[1],s.push("L"+l[l.length-2]+","+t.y);var u=d[i].elem("path",{d:s.join("")},a.classNames.area,!0).attr({values:e[i]},c.xmlNs.uri);this.eventEmitter.emit("draw",{type:"area",values:e[i],index:i,group:d[i],element:u})}if(a.showLine){var v=d[i].elem("path",{d:n.join("")},a.classNames.line,!0).attr({values:e[i]},c.xmlNs.uri);this.eventEmitter.emit("draw",{type:"line",values:e[i],index:i,group:d[i],element:v})}}}this.eventEmitter.emit("created",{bounds:b,chartRect:f,svg:this.svg,options:a})}function e(a,b,d,e){c.Line.super.constructor.call(this,a,b,c.extend({},f,d),e)}var f={axisX:{offset:30,labelOffset:{x:0,y:0},showLabel:!0,showGrid:!0,labelInterpolationFnc:c.noop},axisY:{offset:40,labelOffset:{x:0,y:0},showLabel:!0,showGrid:!0,labelInterpolationFnc:c.noop,scaleMinSpace:20},width:void 0,height:void 0,showLine:!0,showPoint:!0,showArea:!1,areaBase:0,lineSmooth:!0,low:void 0,high:void 0,chartPadding:5,classNames:{chart:"ct-chart-line",label:"ct-label",labelGroup:"ct-labels",series:"ct-series",line:"ct-line",point:"ct-point",area:"ct-area",grid:"ct-grid",gridGroup:"ct-grids",vertical:"ct-vertical",horizontal:"ct-horizontal"}};c.Line=c.Base.extend({constructor:e,createChart:d})}(window,document,a),function(a,b,c){"use strict";function d(a){var b,d=[],e=c.normalizeDataArray(c.getDataArray(this.data),this.data.labels.length);this.svg=c.createSvg(this.container,a.width,a.height,a.classNames.chart),b=c.getBounds(this.svg,e,a,0);var f=c.createChartRect(this.svg,a),g=this.svg.elem("g").addClass(a.classNames.labelGroup),h=this.svg.elem("g").addClass(a.classNames.gridGroup),i=c.projectPoint(f,b,[0],0);c.createXAxis(f,this.data,h,g,a,this.eventEmitter,this.supportsForeignObject),c.createYAxis(f,b,h,g,a,this.eventEmitter,this.supportsForeignObject);for(var j=0;j<this.data.series.length;j++){var k=j-(this.data.series.length-1)/2,l=f.width()/e[j].length/2;d[j]=this.svg.elem("g"),this.data.series[j].name&&d[j].attr({"series-name":this.data.series[j].name},c.xmlNs.uri),d[j].addClass([a.classNames.series,this.data.series[j].className||a.classNames.series+"-"+c.alphaNumerate(j)].join(" "));for(var m=0;m<e[j].length;m++){var n,o=c.projectPoint(f,b,e[j],m);o.x+=l+k*a.seriesBarDistance,n=d[j].elem("line",{x1:o.x,y1:i.y,x2:o.x,y2:o.y},a.classNames.bar).attr({value:e[j][m]},c.xmlNs.uri),this.eventEmitter.emit("draw",{type:"bar",value:e[j][m],index:m,group:d[j],element:n,x1:o.x,y1:i.y,x2:o.x,y2:o.y})}}this.eventEmitter.emit("created",{bounds:b,chartRect:f,svg:this.svg,options:a})}function e(a,b,d,e){c.Bar.super.constructor.call(this,a,b,c.extend({},f,d),e)}var f={axisX:{offset:30,labelOffset:{x:0,y:0},showLabel:!0,showGrid:!0,labelInterpolationFnc:c.noop},axisY:{offset:40,labelOffset:{x:0,y:0},showLabel:!0,showGrid:!0,labelInterpolationFnc:c.noop,scaleMinSpace:20},width:void 0,height:void 0,high:void 0,low:void 0,chartPadding:5,seriesBarDistance:15,classNames:{chart:"ct-chart-bar",label:"ct-label",labelGroup:"ct-labels",series:"ct-series",bar:"ct-bar",grid:"ct-grid",gridGroup:"ct-grids",vertical:"ct-vertical",horizontal:"ct-horizontal"}};c.Bar=c.Base.extend({constructor:e,createChart:d})}(window,document,a),function(a,b,c){"use strict";function d(a,b,c){var d=b.x>a.x;return d&&"explode"===c||!d&&"implode"===c?"start":d&&"implode"===c||!d&&"explode"===c?"end":"middle"}function e(a){var b,e,f,g,h=[],i=a.startAngle,j=c.getDataArray(this.data);this.svg=c.createSvg(this.container,a.width,a.height,a.classNames.chart),b=c.createChartRect(this.svg,a,0,0),e=Math.min(b.width()/2,b.height()/2),g=a.total||j.reduce(function(a,b){return a+b},0),e-=a.donut?a.donutWidth/2:0,f=a.donut?e:e/2,f+=a.labelOffset;for(var k={x:b.x1+b.width()/2,y:b.y2+b.height()/2},l=1===this.data.series.filter(function(a){return 0!==a}).length,m=0;m<this.data.series.length;m++){h[m]=this.svg.elem("g",null,null,!0),this.data.series[m].name&&h[m].attr({"series-name":this.data.series[m].name},c.xmlNs.uri),h[m].addClass([a.classNames.series,this.data.series[m].className||a.classNames.series+"-"+c.alphaNumerate(m)].join(" "));var n=i+j[m]/g*360;n-i===360&&(n-=.01);var o=c.polarToCartesian(k.x,k.y,e,i-(0===m||l?0:.2)),p=c.polarToCartesian(k.x,k.y,e,n),q=180>=n-i?"0":"1",r=["M",p.x,p.y,"A",e,e,0,q,0,o.x,o.y];a.donut===!1&&r.push("L",k.x,k.y);var s=h[m].elem("path",{d:r.join(" ")},a.classNames.slice+(a.donut?" "+a.classNames.donut:""));if(s.attr({value:j[m]},c.xmlNs.uri),a.donut===!0&&s.attr({style:"stroke-width: "+ +a.donutWidth+"px"}),this.eventEmitter.emit("draw",{type:"slice",value:j[m],totalDataSum:g,index:m,group:h[m],element:s,center:k,radius:e,startAngle:i,endAngle:n}),a.showLabel){var t=c.polarToCartesian(k.x,k.y,f,i+(n-i)/2),u=a.labelInterpolationFnc(this.data.labels?this.data.labels[m]:j[m],m),v=h[m].elem("text",{dx:t.x,dy:t.y,"text-anchor":d(k,t,a.labelDirection)},a.classNames.label).text(""+u);this.eventEmitter.emit("draw",{type:"label",index:m,group:h[m],element:v,text:""+u,x:t.x,y:t.y})}i=n}this.eventEmitter.emit("created",{chartRect:b,svg:this.svg,options:a})}function f(a,b,d,e){c.Pie.super.constructor.call(this,a,b,c.extend({},g,d),e)}var g={width:void 0,height:void 0,chartPadding:5,classNames:{chart:"ct-chart-pie",series:"ct-series",slice:"ct-slice",donut:"ct-donut",label:"ct-label"},startAngle:0,total:void 0,donut:!1,donutWidth:60,showLabel:!0,labelOffset:0,labelInterpolationFnc:c.noop,labelOverflow:!1,labelDirection:"neutral"};c.Pie=c.Base.extend({constructor:f,createChart:e,determineAnchorPosition:d})}(window,document,a),a});
 //# sourceMappingURL=chartist.min.js.map
 !function() {
   var d3 = {
