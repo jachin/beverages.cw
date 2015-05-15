@@ -86,11 +86,16 @@ class Consumed(db.Model):
         db.ForeignKey("scanner_location.id"),
         nullable=False
     )
-    barcode = db.Column(
+    barcode_id = db.Column(
         'barcode_id',
         db.Integer,
         db.ForeignKey("barcode.id"),
         nullable=False
+    )
+
+    barcode = db.relationship(
+        'Barcode',
+        backref='barcode_id',
     )
 
     def serialize(self):
@@ -106,9 +111,9 @@ class Consumed(db.Model):
             'datetime_gmt_human': scan_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'datetime_cst': scan_datetime_cst.strftime("%Y-%m-%d %H:%M:%S %Z%z"),
             'datetime_cst_human': scan_datetime_cst.strftime("%Y-%m-%d %H:%M:%S"),
-            'type_id': self.details.id,
-            'upc': self.details.upc,
-            'name': self.details.name,
+            'type_id': self.barcode.id,
+            'upc': self.barcode.upc,
+            'name': self.barcode.consumable.name,
         }
 
     def __repr__(self):
@@ -123,6 +128,11 @@ class Barcode(db.Model):
         nullable=False
     )
     upc = db.Column(db.String(50), unique=True)
+
+    consumable = db.relationship(
+        'Consumable',
+        backref='consumable_id',
+    )
 
     def __init__(self, consumable_id=consumable_id, upc=upc):
         self.consumable_id = consumable_id
