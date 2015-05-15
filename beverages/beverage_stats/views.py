@@ -15,6 +15,9 @@ from beverages import app, tz
 from util import update_locations, update_groups_and_consumable, update_bom
 from util import parse_url_date_time, update_url_parameters
 
+from beverages.models import db, ScannerLocation
+from beverages.models import BeverageGroup, Consumable, Consumed, Barcode
+
 mod = Blueprint(
     'beverage_stats',
     __name__,
@@ -30,8 +33,6 @@ def index():
 @mod.route('update_db/')
 def update_database():
 
-    from beverages.models import ScannerLocation
-
     update_locations()
     update_groups_and_consumable()
 
@@ -44,8 +45,6 @@ def update_database():
 @mod.route('ping')
 @mod.route('ping/')
 def ping():
-
-    from models import BeverageGroup, Consumable
 
     from pyga.requests import Tracker, Event, Session, Visitor
 
@@ -88,8 +87,6 @@ def ping():
 @mod.route('days/<day_string>')
 def days(day_string):
 
-    from models import Consumed
-
     days = {}
     for consumed in Consumed.query.all():
 
@@ -114,8 +111,6 @@ def days(day_string):
 @mod.route('scans/last-10/')
 def scans():
 
-    from models import Consumed
-
     scans = []
     for consumed in Consumed.query.order_by(Consumed.datetime.desc())[:10]:
         scans.append(consumed.serialize())
@@ -130,8 +125,6 @@ def scans():
 @mod.route('scans/all/')
 def show_all():
 
-    from models import Consumed
-
     if not request.is_xhr and not request.args.get('json', False):
         return render_template('blank.html')
 
@@ -145,8 +138,6 @@ def show_all():
 @mod.route('drinks')
 @mod.route('drinks/')
 def show_consumables():
-
-    from models import Consumable, Consumed
 
     drinks = []
     for consumable in Consumable.query.all():
@@ -168,8 +159,6 @@ def show_consumables():
 @mod.route('drink/<int:consumable_id>/by/day/')
 @crossdomain(origin='*')
 def show_one_consumable(consumable_id):
-
-    from models import Consumed
 
     if not request.is_xhr and not request.args.get('json', False):
         return render_template('drink_by_day.html')
@@ -230,8 +219,6 @@ def show_one_consumable(consumable_id):
 @mod.route('drinks/by/day', methods=['GET'])
 @crossdomain(origin='*')
 def show_drinks_by_day():
-
-    from models import db, Consumed
 
     start_date = parse_url_date_time(
         request.args.get('start_date', ''),
@@ -309,8 +296,6 @@ def show_drinks_by_beverage():
 @mod.route('graph/beverages/by/time/')
 def graph_beverages_by_time():
 
-    from models import db, Consumed
-
     query = db.session.query(Consumed)
     query.order_by(Consumed.datetime)
 
@@ -350,8 +335,6 @@ def graph_beverages_by_time():
 
 @mod.route('year/summary')
 def year_summary():
-
-    from models import db, Consumed
 
     query = db.session.query(Consumed)
     query.order_by(Consumed.datetime)
