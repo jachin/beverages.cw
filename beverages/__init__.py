@@ -23,9 +23,9 @@ from beverages.beverage_stats.views import mod as beverageStatsModule
 app.register_blueprint(bowerModules, url_prefix='/bower')
 app.register_blueprint(beverageStatsModule, url_prefix='/')
 
-from admin import ConsumableGroupModelView, BeverageGroupModelView
+#from admin import ConsumableGroupModelView, BeverageGroupModelView
 
-admin = Admin(app, name='Beverage-O-Meter Admin')
-admin.add_view(ConsumableGroupModelView(db.session))
+#admin = Admin(app, name='Beverage-O-Meter Admin')
+#admin.add_view(ConsumableGroupModelView(db.session))
 #admin.add_view(ModelView(Consumed, db.session))
-admin.add_view(BeverageGroupModelView(db.session))
+#admin.add_view(BeverageGroupModelView(db.session))

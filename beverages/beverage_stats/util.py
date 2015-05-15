@@ -11,8 +11,9 @@ import simplejson
 import pytz
 
 from beverages import app
-from models import db, ScannerLocation
-from models import BeverageGroup, Consumable, Consumed, Barcode
+
+from beverages.models import db, ScannerLocation
+from beverages.models import BeverageGroup, Consumable, Consumed, Barcode
 
 def update_locations():
 
@@ -31,6 +32,7 @@ def update_locations():
 
 
 def update_groups_and_consumable():
+
     stream = open("beverage_data.yaml", 'r')
     beverages_data = yaml.load(stream)
 
@@ -90,6 +92,7 @@ def update_groups_and_consumable():
 
 
 def update_bom(location):
+
     bad_upcs = get_bad_upcs()
 
     last_consumed = Consumed.query.filter_by(

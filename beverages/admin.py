@@ -7,8 +7,8 @@ from beverages import app, db
 
 from beverages.beverage_stats.models import BeverageGroup, Consumable, Consumed
 
-
 class BeverageGroupModelView(ModelView):
+
     inline_models = [(Consumable, dict(form_columns=['name']))]
 
     def __init__(self, session):
