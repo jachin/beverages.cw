@@ -23,8 +23,3 @@ from util import parse_url_date_time, update_url_parameters
 def index():
     return render_template('index.html')
 
-
-
-
-
-
