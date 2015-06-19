@@ -1,5 +1,5 @@
 {
-  "name": "beverages-cw",
+  "name": "bom_data_viz",
   "devDependencies": {
     "apache-server-configs": "^2.7.1",
     "grunt": "^0.4.5",

@@ -3,6 +3,7 @@
 'use strict';
 
 module.exports = function(grunt) {
+
   grunt.loadNpmTasks('grunt-bower-concat');
 
   require('load-grunt-tasks')(grunt);
@@ -19,7 +20,7 @@ module.exports = function(grunt) {
       bower: {
         options: {
           mangle: true,
-          compress: true
+          compress: {}
         },
         files: {
           'static/js/bower.min.js': 'static/js/bower.js'
@@ -32,4 +33,6 @@ module.exports = function(grunt) {
     'bower_concat',
     'uglify:bower'
   ]);
+
+  grunt.registerTask('default', ['buildbower']);
 };
